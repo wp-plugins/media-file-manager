@@ -29,14 +29,14 @@
      inkscape:pageshadow="2"
      inkscape:zoom="2.0217091"
      inkscape:cx="408.82773"
-     inkscape:cy="271.0866"
+     inkscape:cy="144.66809"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:window-width="1391"
      inkscape:window-height="915"
-     inkscape:window-x="573"
-     inkscape:window-y="23"
+     inkscape:window-x="280"
+     inkscape:window-y="35"
      inkscape:window-maximized="0">
     <inkscape:grid
        type="xygrid"
@@ -372,5 +372,114 @@
        inkscape:export-filename="C:\Documents and Settings\aueda\デスクトップ\MRL_Icons\text4961.png"
        inkscape:export-xdpi="19.860001"
        inkscape:export-ydpi="19.860001" />
+    <rect
+       style="color:#000000;fill:#fffd00;fill-opacity:1;fill-rule:nonzero;stroke:#887f33;stroke-width:14.1;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       id="rect4099-1-9-1"
+       width="168.57143"
+       height="120"
+       x="123"
+       y="351.50507"
+       rx="5.303874"
+       ry="5.3038735"
+       inkscape:export-filename="C:\Documents and Settings\aueda\デスクトップ\MRL_Icons\media_folder.png"
+       inkscape:export-xdpi="7.389668"
+       inkscape:export-ydpi="7.389668" />
+    <path
+       style="fill:#fffd00;fill-opacity:1;stroke:#8d8b38;stroke-width:14;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="m 130,347.36218 20,-30 90,0 20,30 z"
+       id="path4885-0-4-7"
+       inkscape:connector-curvature="0"
+       inkscape:export-xdpi="7.389668"
+       inkscape:export-ydpi="7.389668"
+       inkscape:export-filename="C:\Documents and Settings\aueda\デスクトップ\MRL_Icons\media_folder.png" />
+    <text
+       xml:space="preserve"
+       style="font-size:122.60083008px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="146.04298"
+       y="456.26141"
+       id="text3037"
+       sodipodi:linespacing="125%"
+       transform="scale(1.0053817,0.99464712)"
+       inkscape:export-xdpi="7.389668"
+       inkscape:export-ydpi="7.389668"
+       inkscape:export-filename="C:\Documents and Settings\aueda\デスクトップ\MRL_Icons\media_folder.png"><tspan
+         sodipodi:role="line"
+         id="tspan3039"
+         x="146.04298"
+         y="456.26141"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Palatino Linotype;-inkscape-font-specification:Palatino Linotype Bold">M</tspan></text>
+    <rect
+       style="color:#000000;fill:#c8c8c8;fill-opacity:1;fill-rule:nonzero;stroke:#8f9090;stroke-width:7;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       id="rect3812"
+       width="100"
+       height="95"
+       x="205"
+       y="942.36218"
+       rx="5.303874"
+       ry="5.3038735"
+       inkscape:export-filename="C:\Documents and Settings\aueda\デスクトップ\MRL_Icons\path3825.png"
+       inkscape:export-xdpi="16.82243"
+       inkscape:export-ydpi="16.82243" />
+    <g
+       id="g3820"
+       transform="matrix(1.3171591,0,0,1.2639008,31.056928,-284.96906)"
+       inkscape:export-filename="C:\Documents and Settings\aueda\デスクトップ\MRL_Icons\path3825.png"
+       inkscape:export-xdpi="16.82243"
+       inkscape:export-ydpi="16.82243">
+      <path
+         inkscape:connector-curvature="0"
+         id="path3818"
+         d="m 189,989.36218 0,45.00002 -45,-25 45,-25.00002 z"
+         style="fill:none;stroke:#000000;stroke-width:0.77504045px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+    </g>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 145,952.36218 -30,55.00002 60,-10.00002 z"
+       id="path3823"
+       inkscape:connector-curvature="0" />
+    <path
+       style="fill:#27282a;fill-opacity:1;stroke:none"
+       d="m 251.82929,1006.1501 c -14.87066,-7.93812 -27.42506,-14.67276 -27.89866,-14.96578 -0.5892,-0.36455 7.94754,-5.22833 27.03758,-15.40454 l 27.89865,-14.87177 0.17446,14.93636 c 0.096,8.215 0.096,21.64192 0,29.83763 l -0.17446,14.9012 -27.03757,-14.4331 z"
+       id="path3825"
+       inkscape:connector-curvature="0"
+       inkscape:export-xdpi="16.82243"
+       inkscape:export-ydpi="16.82243" />
+    <g
+       id="g3854"
+       transform="matrix(-1,0,0,-1,789.99052,1977.8245)"
+       inkscape:export-xdpi="16.82243"
+       inkscape:export-ydpi="16.82243">
+      <rect
+         inkscape:export-ydpi="16.82243"
+         inkscape:export-xdpi="16.82243"
+         inkscape:export-filename="C:\Documents and Settings\aueda\デスクトップ\MRL_Icons\path3825.png"
+         ry="5.3038735"
+         rx="5.303874"
+         y="938.94458"
+         x="334.0318"
+         height="95"
+         width="100"
+         id="rect3812-2"
+         style="color:#000000;fill:#c8c8c8;fill-opacity:1;fill-rule:nonzero;stroke:#8f9090;stroke-width:7;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+      <g
+         inkscape:export-ydpi="16.82243"
+         inkscape:export-xdpi="16.82243"
+         inkscape:export-filename="C:\Documents and Settings\aueda\デスクトップ\MRL_Icons\path3825.png"
+         transform="matrix(1.3171591,0,0,1.2639008,160.08873,-288.38667)"
+         id="g3820-9">
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.77504045px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           d="m 189,989.36218 0,45.00002 -45,-25 45,-25.00002 z"
+           id="path3818-0"
+           inkscape:connector-curvature="0" />
+      </g>
+      <path
+         inkscape:export-ydpi="16.82243"
+         inkscape:export-xdpi="16.82243"
+         inkscape:connector-curvature="0"
+         id="path3825-0"
+         d="m 380.86107,1002.7325 c -14.87065,-7.93813 -27.42505,-14.67277 -27.89865,-14.96579 -0.5892,-0.36455 7.9475,-5.22833 27.03757,-15.40451 l 27.89862,-14.8718 0.1745,14.9364 c 0.096,8.21496 0.096,21.64188 0,29.8376 l -0.1745,14.9012 -27.03754,-14.4331 z"
+         style="fill:#27282a;fill-opacity:1;stroke:none" />
+    </g>
   </g>
 </svg>

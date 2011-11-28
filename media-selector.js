@@ -250,21 +250,35 @@ function mrl_open_selector_insert_dialog_main(dat)
 		var description = jQuery('textarea#attachments_post_content').val();
 		var link_url = jQuery('input#attachments_url').val();
 		var is_image = mrl_data['is_image']; 
+
 		if (is_image) {
-			var alt = jQuery('input#attachments_image_alt').val();
+			var alt_org = jQuery('input#attachments_image_alt').val();
 			var align = jQuery('input:radio[name=attachments_align]:checked').val();
 			var size = jQuery('input:radio[name=attachments-image-size]:checked').val();
 			var width=0, height=0;
 			var iclass='';
-			alt = mrl_htmlEncode(alt);
+			alt = mrl_htmlEncode(alt_org);
+		} else {
+			alt = "$none$";
 		}
+
+		var data = {
+			action: 'mrelocator_update_media_information',
+			id:mrl_data['posts']['ID'],
+			title:title,
+			caption:caption,
+			description:description,
+			alt: alt_org
+		};
+		jQuery.post(ajaxurl, data, function(response) {});
+
 
 		title = mrl_htmlEncode(title);
 		caption = mrl_htmlEncode(caption);
 		description = mrl_htmlEncode(description);
 
 		if (is_image) {
-			img_url = uploadurl;//mrl_data['urldir'];
+			img_url = /*uploadurl;*/mrl_data['urldir'];
 			if (size=='full') {
 				width = mrl_data['meta']['width'];
 				height = mrl_data['meta']['height'];

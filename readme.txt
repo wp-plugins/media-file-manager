@@ -4,7 +4,7 @@ Donate link: http://tempspace.net/plugins/
 Tags: media,file,manager,relocate,folder,folders,files,rename,make directory,directories,organize,organizer,select,selector,database
 Requires at least: 3.2.0
 Tested up to: 3.3
-Stable tag: 0.8.0
+Stable tag: 1.0.0
 
 You can make sub-directories in the upload directory, and move files into them.
 
@@ -56,6 +56,10 @@ the directory of the stable readme.txt, so in this case, `/tags/4.3/screenshot-1
 2. This is the second screen shot
 
 == Changelog ==
+
+= 1.0.0 =
+* Solved installation problem.
+* several bug fixes.
 
 = 0.8.0 =
 * Initial release.

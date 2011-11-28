@@ -3,7 +3,7 @@
 Plugin Name: Media File Manager
 Plugin URI: http://tempspace.net/plugins/?page_id=111
 Description: You can make sub-directories in the upload directory, and move files into them. At the same time, this plugin modifies the URLs/path names in the database. Also an alternative file-selector is added in the editing post/page screen, so you can pick up media files from the subfolders easily.
-Version: 0.8.0
+Version: 1.0.0
 Author: Atsushi Ueda
 Author URI: http://tempspace.net/plugins/
 License: GPL2
@@ -266,6 +266,8 @@ function mrelocator_get_subdir($dir)
 
 function mrelocator_rename_callback()
 {
+//rename ('/home/ued/public_html/w/wp-content/uploads/2011','/home/ued/public_html/w/wp-content/uploads/2011aaaa');die();
+
 	global $wpdb;
 	global $mrelocator_uploaddir;
 
@@ -304,6 +306,7 @@ function mrelocator_rename_callback()
 
 	for ($i=0; $i<count($old); $i++) {
 		$res = @rename($dir.$old[$i], $dir.$new[$i]);
+//echo $dir.$old[$i]." -> ". $dir.$new[$i]."\n";
 		if (!res) {
 			for ($j=0; $j<$i; $j++) {
 				$res = @rename($dir.$new[$i], $dir.$old[$i]);
@@ -314,67 +317,68 @@ function mrelocator_rename_callback()
 //die("OK");
 
 	$subdir = mrelocator_get_subdir($dir);
-	$rc=0;
 
-	if (!mysql_query("START TRANSACTION", $wpdb->dbh)) {$rc=1;goto ERR;}
+	try {
+		if (!mysql_query("START TRANSACTION", $wpdb->dbh)) {throw new Exception('1');}
 
-	for ($i=0; $i<count($old); $i++) {
-		$oldp = $dir . $old[$i];	//old path
-		$newp = $dir . $new[$i];	//new path
-		if (is_dir($newp)) {
-			$oldp .= "/";
-			$newp .= "/";
-		}
-		$oldu=mrelocator_path2url($oldp);	//old url
-		$newu=mrelocator_path2url($newp);	//new url
-		$olda = $subdir.$old[$i];	//old attachment file name (subdir+basename)
-		$newa = $subdir.$new[$i];	//new attachment file name (subdir+basename)
-
-		if ($wpdb->query("update $wpdb->posts set post_content=replace(post_content, '" . $oldu . "','" . $newu . "') where post_content like '%".$oldu."%'")===FALSE) {$rc=2;goto ERR;}
-		if ($wpdb->query("update $wpdb->postmeta set meta_value=replace(meta_value, '" . $oldu . "','" . $newu . "') where meta_value like '%".$oldu."%'")===FALSE)  {$rc=3;goto ERR;}
-
-		if (is_dir($newp)) {
-			if ($wpdb->query("update $wpdb->posts set guid=replace(guid, '" . $oldu . "','" . $newu . "') where guid like '".$oldu."%'")===FALSE)  {$rc=4;goto ERR;}
-			//$wpdb->query("update $wpdb->postmeta set meta_value=CONCAT('".$subdir.$new[$i]."/',substr(meta_value,".(strlen($subdir.$old[$i]."/")+1).")) where meta_value like '".$subdir.$old[$i]."/%'");
-
-
-			$ids = $wpdb->get_results("select post_id from $wpdb->postmeta where meta_value like '".$subdir.$old[$i]."/%'");
-			for ($j=0; $j<count($ids); $j++) {
-				$meta = wp_get_attachment_metadata($ids[$j]->post_id);
-				//CONCAT('".$subdir.$new[$i]."/',substr(meta_value,".(strlen($subdir.$old[$i]."/")+1)."))
-				$meta['file'] = $subdir.$new[$i]."/".substr($meta['file'], strlen($subdir.$old[$i]."/"));
-				if (!wp_update_attachment_metadata($ids[$j]->post_id, $meta))  {$rc=5;goto ERR;}
-				$wpdb->query("update $wpdb->postmeta set meta_value='".$meta['file']."' where post_id=".$ids[$j]->post_id." and meta_key='_wp_attached_file'");
+		for ($i=0; $i<count($old); $i++) {
+			$oldp = $dir . $old[$i];	//old path
+			$newp = $dir . $new[$i];	//new path
+			if (is_dir($newp)) {
+				$oldp .= "/";
+				$newp .= "/";
 			}
-		} else {
-			if ($i>0) break;
-			$res = $wpdb->get_results("select post_id from $wpdb->postmeta where meta_key='_wp_attached_file' and meta_value='".$olda."'");
-			if (count($res)) {
-				if ($wpdb->query("update $wpdb->postmeta set meta_value='" . $newa . "' where meta_value = '".$olda."'")===FALSE)  {$rc=6;goto ERR;}
-				$id = $res[0]->post_id;
-				$pt=pathinfo($newa);
-				if ($wpdb->query("update $wpdb->posts set guid='".$newu."', post_title='".$pt['filename']."' where ID = '".$id."'")===FALSE)  {$rc=7;goto ERR;}
+			$oldu=mrelocator_path2url($oldp);	//old url
+			$newu=mrelocator_path2url($newp);	//new url
+			$olda = $subdir.$old[$i];	//old attachment file name (subdir+basename)
+			$newa = $subdir.$new[$i];	//new attachment file name (subdir+basename)
 
-				$meta = wp_get_attachment_metadata($id);
-				foreach ($smallimgs as $key => $value) {
-					$meta['sizes'][$key]['file'] = $smallimgs[$key]['new'];
+			if ($wpdb->query("update $wpdb->posts set post_content=replace(post_content, '" . $oldu . "','" . $newu . "') where post_content like '%".$oldu."%'")===FALSE) {throw new Exception('2');}
+			if ($wpdb->query("update $wpdb->postmeta set meta_value=replace(meta_value, '" . $oldu . "','" . $newu . "') where meta_value like '%".$oldu."%'")===FALSE)  {throw new Exception('3');}
+
+			if (is_dir($newp)) {
+				if ($wpdb->query("update $wpdb->posts set guid=replace(guid, '" . $oldu . "','" . $newu . "') where guid like '".$oldu."%'")===FALSE)  {throw new Exception('4');}
+				//$wpdb->query("update $wpdb->postmeta set meta_value=CONCAT('".$subdir.$new[$i]."/',substr(meta_value,".(strlen($subdir.$old[$i]."/")+1).")) where meta_value like '".$subdir.$old[$i]."/%'");
+
+
+				$ids = $wpdb->get_results("select post_id from $wpdb->postmeta where meta_value like '".$subdir.$old[$i]."/%'");
+				for ($j=0; $j<count($ids); $j++) {
+					$meta = wp_get_attachment_metadata($ids[$j]->post_id);
+					//CONCAT('".$subdir.$new[$i]."/',substr(meta_value,".(strlen($subdir.$old[$i]."/")+1)."))
+					$meta['file'] = $subdir.$new[$i]."/".substr($meta['file'], strlen($subdir.$old[$i]."/"));
+					if (!wp_update_attachment_metadata($ids[$j]->post_id, $meta))  {throw new Exception('5');}
+					$wpdb->query("update $wpdb->postmeta set meta_value='".$meta['file']."' where post_id=".$ids[$j]->post_id." and meta_key='_wp_attached_file'");
 				}
-				$meta['file'] = $subdir . $new[$i];
+			} else {
+				if ($i>0) break;
+				$res = $wpdb->get_results("select post_id from $wpdb->postmeta where meta_key='_wp_attached_file' and meta_value='".$olda."'");
+				if (count($res)) {
+					if ($wpdb->query("update $wpdb->postmeta set meta_value='" . $newa . "' where meta_value = '".$olda."'")===FALSE)  {throw new Exception('6');}
+					$id = $res[0]->post_id;
+					$pt=pathinfo($newa);
+					if ($wpdb->query("update $wpdb->posts set guid='".$newu."', post_title='".$pt['filename']."' where ID = '".$id."'")===FALSE)  {throw new Exception('7');}
+
+					$meta = wp_get_attachment_metadata($id);
+					foreach ($smallimgs as $key => $value) {
+						$meta['sizes'][$key]['file'] = $smallimgs[$key]['new'];
+					}
+					$meta['file'] = $subdir . $new[$i];
 //echo $id;print_r($meta);
-				if (wp_update_attachment_metadata($id, $meta)===FALSE)  {$rc=8;goto ERR;}
+					if (wp_update_attachment_metadata($id, $meta)===FALSE)  {throw new Exception('8');}
+				}
 			}
 		}
-	}
+	
+		$rc=mysql_query("COMMIT", $wpdb->dbh);
 
-	$rc=mysql_query("COMMIT", $wpdb->dbh);
-
-	die();
-ERR:
-	mysql_query("ROLLBACK", $wpdb->dbh);
-	for ($j=0; $j<count($new); $j++) {
-		$res = @rename($dir.$new[$i], $dir.$old[$i]);
+		die();
+	} catch (Exception $e) {
+		mysql_query("ROLLBACK", $wpdb->dbh);
+		for ($j=0; $j<count($new); $j++) {
+			$res = @rename($dir.$new[$j], $dir.$old[$j]);
+		}
+		die("Error ".$e->getMessage());
 	}
-	die("Error ".$rc);
 }
 add_action('wp_ajax_mrelocator_rename', 'mrelocator_rename_callback');
 
@@ -401,60 +405,61 @@ $wpdb->show_errors();
 		}
 	}
 //die("OK");
-	$rc = 0;
-	mysql_query("BEGIN", $wpdb->dbh);
+	try {
+		mysql_query("BEGIN", $wpdb->dbh);
 
-	$subdir_from = mrelocator_get_subdir($dir_from);
-	$subdir_to = mrelocator_get_subdir($dir_to);
+		$subdir_from = mrelocator_get_subdir($dir_from);
+		$subdir_to = mrelocator_get_subdir($dir_to);
 
-	for ($i=0; $i<count($items); $i++) {
-		$old = $dir_from . $items[$i];
-		$new = $dir_to . $items[$i];
-		$isdir=false;
-		if (is_dir($new)) {
-			$old .= "/";
-			$new .= "/";
-			$isdir=true;
-		}
-		$oldu=mrelocator_path2url($old);
-		$newu=mrelocator_path2url($new);
-		if ($wpdb->query("update $wpdb->posts set post_content=replace(post_content, '" . $oldu . "','" . $newu . "') where post_content like '%".$oldu."%'")===FALSE) {$rc=1;goto ERR;}
-		if ($wpdb->query("update $wpdb->postmeta set meta_value=replace(meta_value, '" . $oldu . "','" . $newu . "') where meta_value like '%".$oldu."%'")===FALSE) {$rc=2;goto ERR;}
-
-		if ($isdir) {
-			if ($wpdb->query("update $wpdb->posts set guid=replace(guid, '" . $oldu . "','" . $newu . "') where guid like '".$oldu."%'")===FALSE) {$rc=3;goto ERR;}
-			if ($wpdb->query("update $wpdb->postmeta set meta_value=replace(meta_value, '" . $oldu . "','" . $newu . "') where meta_value like '".$oldu."%'")===FALSE) {$rc=4;goto ERR;}
-
-			$ids = $wpdb->get_results("select post_id from $wpdb->postmeta where meta_value like '".$subdir_from.$items[$i]."/%'");
-			for ($j=0; $j<count($ids); $j++) {
-				$meta = wp_get_attachment_metadata($ids[$j]->post_id);
-				//$meta->file = CONCAT('".$subdir_to.$items[$i]."/',substr(meta_value,".(strlen($subdir_from.$items[$i]."/")+1)."))
-				$meta['file'] = $subdir_to.$items[$i]."/" . substr($meta['file'], strlen($subdir_from.$items[$i]."/"));
-				wp_update_attachment_metadata($ids[$j]->post_id, $meta);
-				if ($wpdb->query("update $wpdb->postmeta set meta_value='".$meta['file']."' where post_id=".$ids[$j]->post_id." and meta_key='_wp_attached_file'")===FALSE) {$rc=5;goto ERR;}
+		for ($i=0; $i<count($items); $i++) {
+			$old = $dir_from . $items[$i];
+			$new = $dir_to . $items[$i];
+			$isdir=false;
+			if (is_dir($new)) {
+				$old .= "/";
+				$new .= "/";
+				$isdir=true;
 			}
-			//$wpdb->query("update $wpdb->postmeta set meta_value=CONCAT('".$subdir_to.$items[$i]."/',substr(meta_value,".(strlen($subdir_from.$items[$i]."/")+1).")) where meta_value like '".$subdir_from.$items[$i]."/%'");
-		} else {
-			if ($wpdb->query("update $wpdb->posts set guid='" . $newu . "' where guid = '".$oldu."'")===FALSE) {$rc=6;goto ERR;}
-			$ids = $wpdb->get_results("select post_id from $wpdb->postmeta where meta_value = '".$subdir_from.$items[$i]."'");
-			for ($j=0; $j<count($ids); $j++) {
-				$meta = wp_get_attachment_metadata($ids[$j]->post_id);
-				$meta['file'] = $subdir_to.$items[$i]; 
-				wp_update_attachment_metadata($ids[$j]->post_id, $meta);
+			$oldu=mrelocator_path2url($old);
+			$newu=mrelocator_path2url($new);
+			if ($wpdb->query("update $wpdb->posts set post_content=replace(post_content, '" . $oldu . "','" . $newu . "') where post_content like '%".$oldu."%'")===FALSE) {throw new Exception('1');}
+			if ($wpdb->query("update $wpdb->postmeta set meta_value=replace(meta_value, '" . $oldu . "','" . $newu . "') where meta_value like '%".$oldu."%'")===FALSE) {throw new Exception('2');}
+
+			if ($isdir) {
+				if ($wpdb->query("update $wpdb->posts set guid=replace(guid, '" . $oldu . "','" . $newu . "') where guid like '".$oldu."%'")===FALSE) {throw new Exception('3');}
+				if ($wpdb->query("update $wpdb->postmeta set meta_value=replace(meta_value, '" . $oldu . "','" . $newu . "') where meta_value like '".$oldu."%'")===FALSE) {throw new Exception('4');}
+
+				$ids = $wpdb->get_results("select post_id from $wpdb->postmeta where meta_value like '".$subdir_from.$items[$i]."/%'");
+				for ($j=0; $j<count($ids); $j++) {
+					$meta = wp_get_attachment_metadata($ids[$j]->post_id);
+					//$meta->file = CONCAT('".$subdir_to.$items[$i]."/',substr(meta_value,".(strlen($subdir_from.$items[$i]."/")+1)."))
+					$meta['file'] = $subdir_to.$items[$i]."/" . substr($meta['file'], strlen($subdir_from.$items[$i]."/"));
+					wp_update_attachment_metadata($ids[$j]->post_id, $meta);
+					if ($wpdb->query("update $wpdb->postmeta set meta_value='".$meta['file']."' where post_id=".$ids[$j]->post_id." and meta_key='_wp_attached_file'")===FALSE) {throw new Exception('5');}
+				}
+				//$wpdb->query("update $wpdb->postmeta set meta_value=CONCAT('".$subdir_to.$items[$i]."/',substr(meta_value,".(strlen($subdir_from.$items[$i]."/")+1).")) where meta_value like '".$subdir_from.$items[$i]."/%'");
+			} else {
+				if ($wpdb->query("update $wpdb->posts set guid='" . $newu . "' where guid = '".$oldu."'")===FALSE) {throw new Exception('6');}
+				$ids = $wpdb->get_results("select post_id from $wpdb->postmeta where meta_value = '".$subdir_from.$items[$i]."'");
+				for ($j=0; $j<count($ids); $j++) {
+					$meta = wp_get_attachment_metadata($ids[$j]->post_id);
+					$meta['file'] = $subdir_to.$items[$i]; 
+					wp_update_attachment_metadata($ids[$j]->post_id, $meta);
+				}
+				if ($wpdb->query("update $wpdb->postmeta set meta_value='" . $subdir_to.$items[$i] . "'where meta_value = '".$subdir_from.$items[$i]."'")===FALSE) {throw new Exception('7');}
 			}
-			if ($wpdb->query("update $wpdb->postmeta set meta_value='" . $subdir_to.$items[$i] . "'where meta_value = '".$subdir_from.$items[$i]."'")===FALSE) {$rc=7;goto ERR;}
 		}
-	}
 
-	mysql_query("COMMIT", $wpdb->dbh);
+		mysql_query("COMMIT", $wpdb->dbh);
 
-	die("");
-ERR:
-	mysql_query("ROLLBACK", $wpdb->dbh);
-	for ($j=0; $j<count($items); $j++) {
-		$res = @rename($dir_to . $items[$j] , $dir_from . $items[$j]);
+		die("");
+	} catch (Exception $e) {
+		mysql_query("ROLLBACK", $wpdb->dbh);
+		for ($j=0; $j<count($items); $j++) {
+			$res = @rename($dir_to . $items[$j] , $dir_from . $items[$j]);
+		}
+		die("Error ".$e->getMessage());
 	}
-	die("Error ".$rc);
 }
 add_action('wp_ajax_mrelocator_move', 'mrelocator_move_callback');
 

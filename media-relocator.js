@@ -18,6 +18,9 @@ jQuery(document).ready(function()
 	pane_left = new MrlPaneClass('mrl_left', true);
 	pane_right = new MrlPaneClass('mrl_right', true);
 
+	pane_left.opposite = pane_right;
+	pane_right.opposite = pane_left;
+
 	adjust_layout();
 
 	pane_left.setdir(uploaddir);
@@ -77,6 +80,7 @@ var MrlPaneClass = function(id_root, flg_chkbox)
 	this.checked_loc = -1;
 	this.last_div_id = "";
 	this.chk_prepare_id = 0;
+	this.opposite=this;
 
 	var that = this;
 
@@ -101,7 +105,14 @@ var MrlPaneClass = function(id_root, flg_chkbox)
 			mrl_ajax_in();
 			jQuery.post(ajaxurl, data, function(response) {
 				if (response!="") alert(response);
-				that.refresh();
+
+				if (that.cur_dir == that.opposite.cur_dir) {
+					that.refresh();
+					that.opposite.refresh();
+				} else {
+					that.refresh();
+				}
+
 				mrl_ajax_out();
 			});
 		});
@@ -272,9 +283,12 @@ MrlPaneClass.prototype.prepare_checkboxes = function()
 							mrl_ajax_in();
 							jQuery.post(ajaxurl, data, function(response) {
 								if (response != "") alert(response);
-								if (pane_left.cur_dir == pane_right.cur_dir) {
-									pane_left.refresh();
-									pane_right.refresh();
+								if (that.opposite.cur_dir.indexOf(that.cur_dir+old_name+"/")===0) {
+									that.opposite.setdir(that.cur_dir+mrloc_input_text.result+"/"+that.opposite.cur_dir.substr((that.cur_dir+old_name+"/").length));
+								}
+								if (that.cur_dir == that.opposite.cur_dir) {
+									that.refresh();
+									that.opposite.refresh();
 								} else {
 									that.refresh();
 								}

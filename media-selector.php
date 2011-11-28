@@ -112,9 +112,9 @@ function mrelocator_get_image_insert_screen_callback()
 	if (count($res)) {
 		$mime_type = $res[0]->post_mime_type;
 		$upload_date=$res[0]->post_date;
-		$title=htmlentities($res[0]->post_title);
-		$caption=htmlentities($res[0]->post_excerpt);
-		$description=htmlentities($res[0]->post_content);
+		$title=esc_html($res[0]->post_title);
+		$caption=esc_html($res[0]->post_excerpt);
+		$description=esc_html($res[0]->post_content);
 		$dat['posts'] = $res[0];
 	}
 
@@ -170,7 +170,7 @@ function mrelocator_get_image_insert_screen_callback()
 		$res = $wpdb->get_results(
 			"SELECT meta_value FROM $wpdb->postmeta WHERE post_id=".$id." AND meta_key='_wp_attachment_image_alt'");
 		if (count($res)) {
-			$alt = htmlentities($res[0]->meta_value);
+			$alt = esc_html($res[0]->meta_value);
 		}
 	}
 ?>
@@ -249,7 +249,6 @@ function mrelocator_get_image_insert_screen_callback()
 		</td></tr>
 		</tbody>
 	</table>
-
 </div>
 </div>
 <div id="mrl_data" style="display:none;"><?php echo json_encode($dat);?></div>
@@ -258,6 +257,24 @@ function mrelocator_get_image_insert_screen_callback()
 }
 
 add_action('wp_ajax_mrelocator_get_image_insert_screen', 'mrelocator_get_image_insert_screen_callback');
+
+function mrelocator_update_media_information_callback()
+{
+	$id = (int)$_POST['id'];
+	$alt = $_POST['alt'];
+	if ($alt != "$none$") {
+		update_post_meta($id, '_wp_attachment_image_alt', $alt);
+	}
+	$edit_post = array();
+	$edit_post['ID'] = $id;
+	$edit_post['post_title'] = $_POST['title'];
+	$edit_post['post_excerpt'] = $_POST['caption'];
+	$edit_post['post_content'] = $_POST['description'];
+
+	wp_update_post( $edit_post );
+	die();
+}
+add_action('wp_ajax_mrelocator_update_media_information', 'mrelocator_update_media_information_callback');
 
 
 /**
