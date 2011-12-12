@@ -23,8 +23,8 @@ jQuery(document).ready(function()
 
 	adjust_layout();
 
-	pane_left.setdir(uploaddir);
-	pane_right.setdir(uploaddir);
+	pane_left.setdir("/");
+	pane_right.setdir("/");
 
 	jQuery(document).keydown(function (e) {
 	  if(e.shiftKey) {
@@ -86,16 +86,20 @@ var MrlPaneClass = function(id_root, flg_chkbox)
 
 	jQuery('#'+this.id_dir_up).click(function(ev) {
 		if (mrl_ajax) return;
-		if (uploaddir == that.cur_dir) return;
+		if ("/" == that.cur_dir) return;
 		that.chdir("..");
 	});
 
 	jQuery('#'+this.id_dir_new).click(function(ev) {
 		if (mrl_ajax) return;
-		mrloc_input_text.make("Make Directory","",300);
+		mrloc_input_text.make("Make Directory","",300, true);
 		mrloc_input_text.set_callback(function(){
 			var dir  =  mrloc_input_text.result;
 			if (dir=="") return;
+			if (that.check_same_name(dir)) {
+				alert("The same name exists.");
+				return;
+			}
 			var res = "";
 			var data = {
 				action: 'mrelocator_mkdir',
@@ -166,10 +170,8 @@ MrlPaneClass.prototype.dir_ajax = function(target_dir,dirj)
 		jQuery('#'+this.id_wrapper).css('cursor:default');
 		return;
 	}
-
 	this.cur_dir = target_dir;
-	jQuery('#'+this.id_dir).val(target_dir.substr(uploaddir.length-1));
-
+	jQuery('#'+this.id_dir).val(target_dir);
 
 	var disp_num = 0;
 
@@ -177,7 +179,6 @@ MrlPaneClass.prototype.dir_ajax = function(target_dir,dirj)
 		jQuery('#'+this.id_pane).html("");
 		return;
 	}
-
 	var dir = JSON.parse(dirj);
 	var html = "";
 	var that = this;
@@ -214,7 +215,7 @@ MrlPaneClass.prototype.dir_ajax = function(target_dir,dirj)
 
 
 // function name: MrlPaneClass::prepare_checkboxes
-// description : prepare event for checkboxes and right-clicks
+// description : prepare event for checkboxes and right-click events(mkdir, rename)
 // argument : (void)
 MrlPaneClass.prototype.prepare_checkboxes = function()
 {
@@ -263,15 +264,24 @@ MrlPaneClass.prototype.prepare_checkboxes = function()
 					mrloc_right_menu.make(Array("Preview","Rename"));
 					var that2 = this;
 					jQuery('#'+mrloc_right_menu.get_item_id(0)).click(function(){ //preview
-						var url = mrloc_url_root + (that.cur_dir+that.dir_list[jQuery(that2).data('data')]['name']).substr(mrloc_document_root.length);
+						var url = mrloc_url_root + (that.cur_dir+that.dir_list[jQuery(that2).data('data')]['name'])/*.substr(mrloc_document_root.length)*/;
 						window.open(url, 'mrlocpreview', 'toolbar=0,location=0,menubar=0')
 					});
 					jQuery('#'+mrloc_right_menu.get_item_id(1)).click(function(){ //rename
 						if (mrl_ajax) return;
-						var old_name = that.dir_list[jQuery(that2).data('data')]['name'];
-						mrloc_input_text.make("Rename ("+old_name+")",old_name,300);
+						var target = that.dir_list[jQuery(that2).data('data')];
+						if (target['norename']) {
+							alert("Sorry, you cannot rename this item.");
+							return;
+						}
+						var old_name = target['name'];
+						mrloc_input_text.make("Rename ("+old_name+")",old_name,300, target['isdir'] );
 						mrloc_input_text.set_callback(function(){
 							if (old_name == mrloc_input_text.result || mrloc_input_text.result=="") {
+								return;
+							}
+							if (that.check_same_name(mrloc_input_text.result)) {
+								alert("The same name exists.");
 								return;
 							}
 							var data = {
@@ -311,6 +321,16 @@ MrlPaneClass.prototype.prepare_checkboxes = function()
 	}
 }
 
+MrlPaneClass.prototype.check_same_name = function(str)
+{
+	var i;
+	for (i=0; i<this.dir_list.length; i++) {
+		if (this.dir_list[i]['name'] == str) {
+			return true;
+		}
+	}
+	return false;
+}
 
 // function name: MrlPaneClass::chdir
 // description : move directory and display its list
@@ -379,10 +399,6 @@ function mrloc_move(pane_from, pane_to)
 	});
 }
 
-function mrloc_mkdir()
-{
-
-}
 
 //**** right-menu class *******************************************************************
 var MrlRightMenuClass = function()
@@ -454,8 +470,9 @@ var MrlInputTextClass = function()
 // function name: MrlInputTextClass::make
 // description : make and display a text input form
 // argument : (title)title; (init_text)initial text; (textbox_width)width of textbox
-MrlInputTextClass.prototype.make = function(title, init_text, textbox_width)
+MrlInputTextClass.prototype.make = function(title, init_text, textbox_width, is_dirname)
 {
+	this.is_dirname = is_dirname;
 	var html="";
 	jQuery('body').append('<div id="mrl_input_text"></div>');
 	html = '<div class="title">'+title+'</div>';
@@ -475,8 +492,17 @@ MrlInputTextClass.prototype.make = function(title, init_text, textbox_width)
 
 	var that = this;
 	jQuery('#mrl_input_text_ok').click(function(){
+		var result = jQuery('#mrl_input_textbox').val();
+		if (that.check_dotext(result, that.is_dirname)) {
+			alert("Please do not use 'dot + file extension' pattern in the directory name because that can cause problems.");
+			return;
+		}
+		if (that.check_invalid_chr(result)) {
+			alert("The name is not valid.");
+			return;
+		}
 		jQuery('body').unbind('click.mrlinput');
-		that.result = jQuery('#mrl_input_textbox').val();
+		that.result = result;
 		jQuery('#mrl_input_text').remove();
 		that.callback();
 	});
@@ -495,6 +521,43 @@ MrlInputTextClass.prototype.set_callback = function(c)
 {
 	this.callback = c;
 }
+
+// function name: MrlInputTextClass::check_dotext
+// description : check if '.+file extension' pattern exists in the name (ex)abc.jpgdef
+// argument : (str: target string, isdir: the name is of a directory)
+// return : true(exists), false(not exists)
+MrlInputTextClass.prototype.check_dotext = function(str, isdir)
+{
+	var ext = 
+		['.jpg', '.jpeg', '.gif', '.png', '.mp3','.m4a','.ogg','.wav',
+		 '.mp4v', '.mp4', '.mov', '.wmv', '.avi', '.mpg', '.ogv', '.3gp', '.3g2',  
+		 '.pdf', '.docx', '.doc', '.pptx', 'ppt', '.ppsx', '.pps', '.odt', '.xlsx', '.xls'];
+	var i;
+	for (i=0; i<ext.length; i++) {
+		if (str.toLowerCase().indexOf(ext[i]) >= 0) {
+			if (isdir) return true;
+		}
+	}
+	return false;
+}
+
+// function name: MrlInputTextClass::invalid_chr
+// description : check if invalid character exists in the name.
+// argument : (str: target string)
+// return : true(exists), false(not exists)
+MrlInputTextClass.prototype.check_invalid_chr = function(str)
+{
+	var chr = ["\\", "/", ":", "*", "?", "\"", "<", ">", "|", "%", "&"];
+	var i;
+	for (i=0; i<chr.length; i++) {
+		if (str.indexOf(chr[i]) >= 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
 
 //**** Global functions*********************************************************************************
 

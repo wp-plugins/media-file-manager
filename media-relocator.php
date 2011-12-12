@@ -3,7 +3,7 @@
 Plugin Name: Media File Manager
 Plugin URI: http://tempspace.net/plugins/?page_id=111
 Description: You can make sub-directories in the upload directory, and move files into them. At the same time, this plugin modifies the URLs/path names in the database. Also an alternative file-selector is added in the editing post/page screen, so you can pick up media files from the subfolders easily.
-Version: 1.0.0
+Version: 1.0.1
 Author: Atsushi Ueda
 Author URI: http://tempspace.net/plugins/
 License: GPL2
@@ -13,10 +13,14 @@ define("MLOC_DEBUG", 0);
 
 //function dbg2($str){$fp=fopen("/tmp/smdebug.txt","a");fwrite($fp,$str . "\n");fclose($fp);}
 
-$mrelocator_plugin_URL = get_option( 'siteurl' ) . '/wp-content/plugins/' . plugin_basename(dirname(__FILE__));
+include 'set_document_root.php';
+//$mrelocator_plugin_URL = mrelocator_path2url( str_replace('\\', '/',dirname(__FILE__)));
+$mrelocator_plugin_URL = rtrim(plugins_url(),"/")."/". basename(dirname(__FILE__));
 $mrelocator_uploaddir_t = wp_upload_dir();
-$mrelocator_uploaddir = str_replace("//","/",$mrelocator_uploaddir_t['basedir'] . "/");
-$mrelocator_uploadurl = mrelocator_path2url($mrelocator_uploaddir);
+$mrelocator_uploaddir_t2 = str_replace("\\","/",$mrelocator_uploaddir_t['basedir']) . "/";
+$mrelocator_uploaddir = (strstr($mrelocator_uploaddir_t2,"//")==$mrelocator_uploaddir_t2 ? "/" : "") . str_replace("//","/",$mrelocator_uploaddir_t2);
+$mrelocator_uploaddir = rtrim($mrelocator_uploaddir,"/")."/";
+$mrelocator_uploadurl = rtrim($mrelocator_uploaddir_t['baseurl'],"/")."/";
 
 function mrelocator_init() {
 	wp_enqueue_script('jquery');
@@ -44,14 +48,11 @@ function mrelocator_plugin_menu()
 function mrelocator_magic_function()
 {
 	global $mrelocator_plugin_URL;
-	global $mrelocator_uploaddir;
-	//$plugin = plugin_basename('EsAudioPlayer'); $plugin = dirname(__FILE__);
-	//$upload_dir = wp_upload_dir();
-	echo "<script type=\"text/javascript\"> var uploaddir = '".$mrelocator_uploaddir."' </script>\n";
+	global $mrelocator_uploadurl;
 	?>
 
 
-	<script type="text/javascript"> mrloc_document_root = '<?php echo $_SERVER['DOCUMENT_ROOT']?>';mrloc_url_root='<?php echo mrelocator_get_urlroot();?>';</script>
+	<script type="text/javascript"> mrloc_url_root='<?php echo $mrelocator_uploadurl;?>';</script>
 	<script type="text/javascript" src="<?php echo $mrelocator_plugin_URL;?>/media-relocator.js"></script>
 
 	<div class="wrap">
@@ -86,7 +87,7 @@ function mrelocator_magic_function()
 			</div>
 		</div>
 <div id="debug">.<br></div>
-<div id="mrl_test">test<br></div>
+<div id="mrl_test" style="display:none;">test<br></div>
 
 	</div>
 
@@ -103,15 +104,9 @@ function mrelocator_getdir_callback()
 {
 	global $wpdb;
 	global $mrelocator_plugin_URL;
+	global $mrelocator_uploaddir;
 
-	$dir = $_POST['dir'];
-
-	if (strlen($dir)) {
-		if (substr($dir, strlen($dir)-1, 1)!="/") {
-			$dir .= "/";
-		}
-	}
-
+	$dir = $mrelocator_uploaddir . ltrim(rtrim($_POST['dir'], "/")."/","/");
 	$dh = @opendir ( $dir );
 
 	if ($dh === false) {
@@ -131,12 +126,22 @@ function mrelocator_getdir_callback()
 		$dir1[$i]['isdir'] = is_dir($dir."/".$name)?1:0;
 		$dir1[$i]['isthumb'] = 0;
 	}
+	// set no-rename flag to prevent causing problem. 
+	// (When "abc.jpg" and "abc.jpg.jpg" exist, and rename "abc.jpg", "abc.jpg.jpg" in posts will be affected.)
+	for ($i=0; $i<count($dir0); $i++) {
+		$dir1[$i]['norename'] = 0;
+		for ($j=0; $j<count($dir1); $j++) {
+			if ($j==$i) continue;
+			if (!$dir1[$i]['isdir'] && !$dir1[$i]['isdir']) {
+				if (strpos($dir1[$j]['name'], $dir1[$i]['name'])===0) {
+					$dir1[$i]['norename'] = 1;
+				}
+			}
+		}
+	}
 	usort($dir1, mrelocator_dircmp);
 	for ($i=count($dir1)-1; $i>=0; $i--) {
 		$dir1[$i]['id'] = "";
-		if ($dir1[$i]['isdir']) {
-			$dir1[$i]['thumbnail_url'] = $mrelocator_plugin_URL . "/images/dir.png";
-		}
 		if ($dir1[$i]['isdir']) {
 			$dir1[$i]['thumbnail_url'] = $mrelocator_plugin_URL . "/images/dir.png";
 		}
@@ -179,7 +184,6 @@ function mrelocator_getdir_callback()
 				}
 				$dir1[$i]['thumbnail'] = $min_child;
 				$dir1[$i]['thumbnail_url'] = mrelocator_path2url($dir .  $dir1[$min_child]['name']);
-
 				$backup_sizes = get_post_meta( $dbres[0]->post_id, '_wp_attachment_backup_sizes', true );
 				$meta = wp_get_attachment_metadata( $dbres[0]->post_id );
 				if ( is_array($backup_sizes) ) {
@@ -214,14 +218,15 @@ function mrelocator_dircmp($a, $b)
 {
 	$ret = $b['isdir'] - $a['isdir'];
 	if ($ret) return $ret;
-	return strcmp($a['name'], $b['name']);
+	return strcasecmp($a['name'], $b['name']);
 }
 
 function mrelocator_mkdir_callback()
 {
 	global $wpdb;
-
-	$dir = $_POST['dir'];
+	global $mrelocator_uploaddir;
+	
+	$dir = $mrelocator_uploaddir . ltrim(rtrim($_POST['dir'], "/")."/","/");
 	$newdir = $_POST['newdir'];
 
 	$res = chdir($dir);
@@ -249,16 +254,14 @@ function udate($format, $utimestamp = null)
 
 function mrelocator_get_subdir($dir)
 {
-	$upload_dir_a = wp_upload_dir();
-	$upload_dir = $upload_dir_a['path'];
+	global $mrelocator_uploaddir;
+	$upload_dir = $mrelocator_uploaddir;
 	$upload_dir = substr($upload_dir, 0, strlen($upload_dir)-strlen($upload_dir_a['subdir']));
 	$subdir = substr($dir,  strlen($upload_dir));
 	if (substr($subdir,0,1)=="/" || substr($subdir,0,1)=="\\") {
 		$subdir = substr($subdir, 1);
 	}
-	if (substr($subdir, strlen($subdir)-1, 1)!="/") {
-		$subdir .= "/";
-	}
+	$subdir = rtrim($subdir, "/")."/";
 	if ($subdir=="/") $subdir="";
 	return $subdir;
 }
@@ -270,11 +273,11 @@ function mrelocator_rename_callback()
 
 	global $wpdb;
 	global $mrelocator_uploaddir;
+	global $mrelocator_uploadurl;
 
 	$wpdb->show_errors();
 
-	$dir = $_POST['dir'];
-	if (substr($dir, strlen($dir)-1,1) != "/") $dir .= "/";
+	$dir = $mrelocator_uploaddir . ltrim(rtrim($_POST['dir'], "/")."/","/");
 	$subdir = substr($dir, strlen($mrelocator_uploaddir));
 
 	$old[0] = $_POST['from'];
@@ -297,7 +300,6 @@ function mrelocator_rename_callback()
 				$path_parts = pathinfo($new[0]);
 				$old[count($old)] = $file;
 				$new[count($new)] = $path_parts['filename']."-".$width."x".$height.".".$path_parts['extension'];
-				
 				$smallimgs[$key]['old'] = $file;
 				$smallimgs[$key]['new'] = $new[count($new)-1];
 			}
@@ -328,8 +330,8 @@ function mrelocator_rename_callback()
 				$oldp .= "/";
 				$newp .= "/";
 			}
-			$oldu=mrelocator_path2url($oldp);	//old url
-			$newu=mrelocator_path2url($newp);	//new url
+			$oldu = $mrelocator_uploadurl . ltrim($_POST['dir'],"/") . $old[$i].(is_dir($newp)?"/":"");	//old url
+			$newu = $mrelocator_uploadurl . ltrim($_POST['dir'],"/") . $new[$i].(is_dir($newp)?"/":"");	//new url
 			$olda = $subdir.$old[$i];	//old attachment file name (subdir+basename)
 			$newa = $subdir.$new[$i];	//new attachment file name (subdir+basename)
 
@@ -340,7 +342,6 @@ function mrelocator_rename_callback()
 				if ($wpdb->query("update $wpdb->posts set guid=replace(guid, '" . $oldu . "','" . $newu . "') where guid like '".$oldu."%'")===FALSE)  {throw new Exception('4');}
 				//$wpdb->query("update $wpdb->postmeta set meta_value=CONCAT('".$subdir.$new[$i]."/',substr(meta_value,".(strlen($subdir.$old[$i]."/")+1).")) where meta_value like '".$subdir.$old[$i]."/%'");
 
-
 				$ids = $wpdb->get_results("select post_id from $wpdb->postmeta where meta_value like '".$subdir.$old[$i]."/%'");
 				for ($j=0; $j<count($ids); $j++) {
 					$meta = wp_get_attachment_metadata($ids[$j]->post_id);
@@ -350,21 +351,21 @@ function mrelocator_rename_callback()
 					$wpdb->query("update $wpdb->postmeta set meta_value='".$meta['file']."' where post_id=".$ids[$j]->post_id." and meta_key='_wp_attached_file'");
 				}
 			} else {
-				if ($i>0) break;
-				$res = $wpdb->get_results("select post_id from $wpdb->postmeta where meta_key='_wp_attached_file' and meta_value='".$olda."'");
-				if (count($res)) {
-					if ($wpdb->query("update $wpdb->postmeta set meta_value='" . $newa . "' where meta_value = '".$olda."'")===FALSE)  {throw new Exception('6');}
-					$id = $res[0]->post_id;
-					$pt=pathinfo($newa);
-					if ($wpdb->query("update $wpdb->posts set guid='".$newu."', post_title='".$pt['filename']."' where ID = '".$id."'")===FALSE)  {throw new Exception('7');}
-
-					$meta = wp_get_attachment_metadata($id);
-					foreach ($smallimgs as $key => $value) {
-						$meta['sizes'][$key]['file'] = $smallimgs[$key]['new'];
+				if ($i==0) {
+					$res = $wpdb->get_results("select post_id from $wpdb->postmeta where meta_key='_wp_attached_file' and meta_value='".$olda."'");
+					if (count($res)) {
+						if ($wpdb->query("update $wpdb->postmeta set meta_value='" . $newa . "' where meta_value = '".$olda."'")===FALSE)  {throw new Exception('6');}
+						$id = $res[0]->post_id;
+						$pt=pathinfo($newa);
+						if ($wpdb->query("update $wpdb->posts set guid='".$newu."', post_title='".$pt['filename']."' where ID = '".$id."'")===FALSE)  {throw new Exception('7');}
+	
+						$meta = wp_get_attachment_metadata($id);
+						foreach ($smallimgs as $key => $value) {
+							$meta['sizes'][$key]['file'] = $smallimgs[$key]['new'];
+						}
+						$meta['file'] = $subdir . $new[$i];
+						if (wp_update_attachment_metadata($id, $meta)===FALSE)  {throw new Exception('8');}
 					}
-					$meta['file'] = $subdir . $new[$i];
-//echo $id;print_r($meta);
-					if (wp_update_attachment_metadata($id, $meta)===FALSE)  {throw new Exception('8');}
 				}
 			}
 		}
@@ -387,10 +388,10 @@ function mrelocator_move_callback()
 	global $wpdb;
 $wpdb->show_errors();
 
-	$dir_from = $_POST['dir_from'];
-	$dir_to = $_POST['dir_to'];
-	if (substr($dir_from, strlen($dir_from)-1,1) != "/") $dir_from .= "/";
-	if (substr($dir_to, strlen($dir_to)-1,1) != "/") $dir_to .= "/";
+	global $mrelocator_uploaddir;
+	global $mrelocator_uploadurl;
+	$dir_from = $mrelocator_uploaddir . ltrim(rtrim($_POST['dir_from'], "/")."/","/");
+	$dir_to = $mrelocator_uploaddir . ltrim(rtrim($_POST['dir_to'], "/")."/","/");
 
 	$items0 = $_POST['items'];
 	$items = explode("/",$items0);
@@ -405,6 +406,7 @@ $wpdb->show_errors();
 		}
 	}
 //die("OK");
+
 	try {
 		mysql_query("BEGIN", $wpdb->dbh);
 
@@ -420,8 +422,9 @@ $wpdb->show_errors();
 				$new .= "/";
 				$isdir=true;
 			}
-			$oldu=mrelocator_path2url($old);
-			$newu=mrelocator_path2url($new);
+			$oldu = $mrelocator_uploadurl . ltrim($_POST['dir_from'],"/") . $items[$i];	//old url
+			$newu = $mrelocator_uploadurl . ltrim($_POST['dir_to'],"/") . $items[$i];	//new url
+
 			if ($wpdb->query("update $wpdb->posts set post_content=replace(post_content, '" . $oldu . "','" . $newu . "') where post_content like '%".$oldu."%'")===FALSE) {throw new Exception('1');}
 			if ($wpdb->query("update $wpdb->postmeta set meta_value=replace(meta_value, '" . $oldu . "','" . $newu . "') where meta_value like '%".$oldu."%'")===FALSE) {throw new Exception('2');}
 
@@ -471,19 +474,20 @@ function mrelocator_url2path($url)
 		return "";
 	}
 	return $_SERVER['DOCUMENT_ROOT'] . substr($url, strlen($urlroot));
-//get_bloginfo('url'); → http://tempspace.net/hu6
-//$_SERVER['DOCUMENT_ROOT']  /home/tempspace/public_html
 }
 
-function mrelocator_path2url($path)
+function mrelocator_path2url($pathname)
 {
-	$path = str_replace("//","/",$path);
+	$path0 = str_replace("\\","/",$pathname);
+	$path = str_replace("//","/",$path0);
+	if (stripos($path0,"//")===0) $path = "/".$path;
 	$urlroot = mrelocator_get_urlroot();
 	$docroot = $_SERVER['DOCUMENT_ROOT'];
 	if (stripos($path, $docroot) != 0) {
 		return "";
 	}
-	return $urlroot . substr($path, strlen($docroot));
+	$ret1 = substr($path, strlen($docroot));
+	return rtrim($urlroot,"/") . "/" . ltrim($ret1,"/");
 }
 
 function mrelocator_get_urlroot()
@@ -522,7 +526,7 @@ function mrelocator_isaudio($fname)
 
 function mrelocator_isvideo($fname)
 {
-	$ext = array(".mp4", ".wav", ".wma", ".avi", ".flv", ".ogv", ".divx", ".asf");
+	$ext = array(".mp4", ".wav", ".wma", ".avi", ".flv", ".ogv", ".divx", ".mov", "3gp");
 	for ($i=0; $i<count($ext); $i++) {
 		if (strcasecmp(substr($fname, strlen($fname)-strlen($ext[$i])) , $ext[$i]) == 0) {
 			return true;

@@ -282,7 +282,7 @@ function mrl_open_selector_insert_dialog_main(dat)
 			if (size=='full') {
 				width = mrl_data['meta']['width'];
 				height = mrl_data['meta']['height'];
-				img_url += mrl_data['meta']['file'];
+				img_url = uploadurl + mrl_data['meta']['file'];
 				iclass='size-full';
 			}
 			if (size=='thumbnail') {

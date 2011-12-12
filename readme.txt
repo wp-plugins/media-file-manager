@@ -4,7 +4,7 @@ Donate link: http://tempspace.net/plugins/
 Tags: media,file,manager,relocate,folder,folders,files,rename,make directory,directories,organize,organizer,select,selector,database
 Requires at least: 3.2.0
 Tested up to: 3.3
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 
 You can make sub-directories in the upload directory, and move files into them.
 
@@ -12,10 +12,10 @@ You can make sub-directories in the upload directory, and move files into them.
 
 You can make sub-directories in the upload directory, and move files into them. At the same time, this plugin modifies the URLs/path names in the database. Also an alternative file-selector is added in the editing post/page screen, so you can pick up media files from the subfolders easily.
 
-You can see some screenshots in the following URL:
+You can view some screenshots, documentation, known issues in the following URL:
 http://tempspace.net/plugins/?page_id=111
 
-Before try this plugin, I recommend you to backup your contents(files, database) and test this plugin enough. I have tested this plugin only with Apache server, so if you tried it with another kind of servers, please let me know the result.
+Before try this plugin, I recommend you to backup your contents(files, database) and test this plugin enough. I have tested this plugin with Apache(Liunx/Windows) and IIS Express 7.5. If you cannot get working this plugin, please let me know.
 
 (usage of file manager)
 
@@ -45,9 +45,9 @@ Install the plugin like usual ones. Then activate it.
 
 == Frequently Asked Questions ==
 
-= What EsAudioPlayer stands for? =
+= nothing in this section. =
 
-It means 'Extremely Simple Audio Player'. At the beginning, this player had only simple mode, which had only play/stop button. 
+.
 
 == Screenshots ==
 
@@ -56,6 +56,12 @@ the directory of the stable readme.txt, so in this case, `/tags/4.3/screenshot-1
 2. This is the second screen shot
 
 == Changelog ==
+
+= 1.0.1 =
+* Solve the problem that the plugin does not work under some kind of environment/setting (Especially windows servers).
+* Solve the problem that URLs of medium/large images in posts/pages are not replaced.
+* Solve the problem that when a file is renamed to an existing name, the existing file is deleted.
+* Solve the problem that media selector does not work in the QuickPress.
 
 = 1.0.0 =
 * Solved installation problem.

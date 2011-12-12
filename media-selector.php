@@ -14,7 +14,7 @@ function mrelocator_get_media_list_callback()
 		"FROM $wpdb->postmeta, $wpdb->posts ".
 		"WHERE post_id=ID ".
 		"AND meta_key='_wp_attached_file' ".
-		"ORDER BY meta_value ");
+		"ORDER BY post_title ");
 	for ($i=0; $i<count($res); $i++) {
 		$meta = wp_get_attachment_metadata($res[$i]->ID);
 		if (substr($res[$i]->post_mime_type,0,5)=='audio') {
@@ -316,7 +316,8 @@ class MrlMediaSelector
 		if( strpos( $_SERVER[ "REQUEST_URI" ], "post.php"     ) ||
 			strpos( $_SERVER[ "REQUEST_URI" ], "post-new.php" ) ||
 			strpos( $_SERVER[ "REQUEST_URI" ], "page-new.php" ) ||
-			strpos( $_SERVER[ "REQUEST_URI" ], "page.php"     ) )
+			strpos( $_SERVER[ "REQUEST_URI" ], "page.php"     ) ||
+			strpos( $_SERVER[ "REQUEST_URI" ], "index.php"     ) )
 		{
 			echo <<<HTML
 <script type="text/javascript">
