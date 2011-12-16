@@ -3,7 +3,7 @@
 Plugin Name: Media File Manager
 Plugin URI: http://tempspace.net/plugins/?page_id=111
 Description: You can make sub-directories in the upload directory, and move files into them. At the same time, this plugin modifies the URLs/path names in the database. Also an alternative file-selector is added in the editing post/page screen, so you can pick up media files from the subfolders easily.
-Version: 1.0.1
+Version: 1.0.2beta
 Author: Atsushi Ueda
 Author URI: http://tempspace.net/plugins/
 License: GPL2
@@ -14,13 +14,10 @@ define("MLOC_DEBUG", 0);
 //function dbg2($str){$fp=fopen("/tmp/smdebug.txt","a");fwrite($fp,$str . "\n");fclose($fp);}
 
 include 'set_document_root.php';
-//$mrelocator_plugin_URL = mrelocator_path2url( str_replace('\\', '/',dirname(__FILE__)));
-$mrelocator_plugin_URL = rtrim(plugins_url(),"/")."/". basename(dirname(__FILE__));
+$mrelocator_plugin_URL = mrl_adjpath(plugins_url() . "/" . basename(dirname(__FILE__)));
 $mrelocator_uploaddir_t = wp_upload_dir();
-$mrelocator_uploaddir_t2 = str_replace("\\","/",$mrelocator_uploaddir_t['basedir']) . "/";
-$mrelocator_uploaddir = (strstr($mrelocator_uploaddir_t2,"//")==$mrelocator_uploaddir_t2 ? "/" : "") . str_replace("//","/",$mrelocator_uploaddir_t2);
-$mrelocator_uploaddir = rtrim($mrelocator_uploaddir,"/")."/";
-$mrelocator_uploadurl = rtrim($mrelocator_uploaddir_t['baseurl'],"/")."/";
+$mrelocator_uploaddir = mrl_adjpath($mrelocator_uploaddir_t['basedir'], true);
+$mrelocator_uploadurl = mrl_adjpath($mrelocator_uploaddir_t['baseurl'], true);
 
 function mrelocator_init() {
 	wp_enqueue_script('jquery');
@@ -106,7 +103,7 @@ function mrelocator_getdir_callback()
 	global $mrelocator_plugin_URL;
 	global $mrelocator_uploaddir;
 
-	$dir = $mrelocator_uploaddir . ltrim(rtrim($_POST['dir'], "/")."/","/");
+	$dir = mrl_adjpath($mrelocator_uploaddir . "/" . $_POST['dir'], true);
 	$dh = @opendir ( $dir );
 
 	if ($dh === false) {
@@ -226,7 +223,7 @@ function mrelocator_mkdir_callback()
 	global $wpdb;
 	global $mrelocator_uploaddir;
 	
-	$dir = $mrelocator_uploaddir . ltrim(rtrim($_POST['dir'], "/")."/","/");
+	$dir = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir'], true);
 	$newdir = $_POST['newdir'];
 
 	$res = chdir($dir);
@@ -261,7 +258,7 @@ function mrelocator_get_subdir($dir)
 	if (substr($subdir,0,1)=="/" || substr($subdir,0,1)=="\\") {
 		$subdir = substr($subdir, 1);
 	}
-	$subdir = rtrim($subdir, "/")."/";
+	$subdir = mrl_adjpath($subdir, true);
 	if ($subdir=="/") $subdir="";
 	return $subdir;
 }
@@ -277,7 +274,7 @@ function mrelocator_rename_callback()
 
 	$wpdb->show_errors();
 
-	$dir = $mrelocator_uploaddir . ltrim(rtrim($_POST['dir'], "/")."/","/");
+	$dir = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir'], true);
 	$subdir = substr($dir, strlen($mrelocator_uploaddir));
 
 	$old[0] = $_POST['from'];
@@ -390,8 +387,8 @@ $wpdb->show_errors();
 
 	global $mrelocator_uploaddir;
 	global $mrelocator_uploadurl;
-	$dir_from = $mrelocator_uploaddir . ltrim(rtrim($_POST['dir_from'], "/")."/","/");
-	$dir_to = $mrelocator_uploaddir . ltrim(rtrim($_POST['dir_to'], "/")."/","/");
+	$dir_from = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir_from'], true);
+	$dir_to = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir_to'], true);
 
 	$items0 = $_POST['items'];
 	$items = explode("/",$items0);
@@ -422,8 +419,8 @@ $wpdb->show_errors();
 				$new .= "/";
 				$isdir=true;
 			}
-			$oldu = $mrelocator_uploadurl . ltrim($_POST['dir_from'],"/") . $items[$i];	//old url
-			$newu = $mrelocator_uploadurl . ltrim($_POST['dir_to'],"/") . $items[$i];	//new url
+			$oldu = mrl_adjpath( $mrelocator_uploadurl."/".$_POST['dir_from']."/".$items[$i] );	//old url
+			$newu = mrl_adjpath( $mrelocator_uploadurl."/".$_POST['dir_to']."/".$items[$i] );	//new url
 
 			if ($wpdb->query("update $wpdb->posts set post_content=replace(post_content, '" . $oldu . "','" . $newu . "') where post_content like '%".$oldu."%'")===FALSE) {throw new Exception('1');}
 			if ($wpdb->query("update $wpdb->postmeta set meta_value=replace(meta_value, '" . $oldu . "','" . $newu . "') where meta_value like '%".$oldu."%'")===FALSE) {throw new Exception('2');}
@@ -487,7 +484,7 @@ function mrelocator_path2url($pathname)
 		return "";
 	}
 	$ret1 = substr($path, strlen($docroot));
-	return rtrim($urlroot,"/") . "/" . ltrim($ret1,"/");
+	return mrl_adjpath( $urlroot."/".$ret1 );
 }
 
 function mrelocator_get_urlroot()
