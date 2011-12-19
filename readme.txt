@@ -1,7 +1,7 @@
 === Plugin Name ===
 Contributors: aueda
 Donate link: http://tempspace.net/plugins/
-Tags: media,file,manager,relocate,folder,folders,files,rename,make directory,directories,organize,organizer,select,selector,database
+Tags: media,file,manager,explorer,relocate,folder,folders,files,rename,make directory,directories,organize,organizer,select,selector,database
 Requires at least: 3.2.0
 Tested up to: 3.3
 Stable tag: 1.0.2
@@ -51,9 +51,7 @@ Install the plugin like usual ones. Then activate it.
 
 == Screenshots ==
 
-1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
-the directory of the stable readme.txt, so in this case, `/tags/4.3/screenshot-1.png` (or jpg, jpeg, gif)
-2. This is the second screen shot
+1. Media File Manager.
 
 == Changelog ==
 
