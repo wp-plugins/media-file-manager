@@ -177,7 +177,7 @@ MrlPaneClass.prototype.dir_ajax = function(target_dir,dirj)
 
 	if (dirj=="") {
 		jQuery('#'+this.id_pane).html("");
-		return;
+		return new Array();
 	}
 	var dir = JSON.parse(dirj);
 	var html = "";
@@ -323,8 +323,7 @@ MrlPaneClass.prototype.prepare_checkboxes = function()
 
 MrlPaneClass.prototype.check_same_name = function(str)
 {
-	var i;
-	for (i=0; i<this.dir_list.length; i++) {
+	for (var i=0; i<this.dir_list.length; i++) {
 		if (this.dir_list[i]['name'] == str) {
 			return true;
 		}

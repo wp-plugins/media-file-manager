@@ -4,7 +4,7 @@ Donate link: http://tempspace.net/plugins/
 Tags: media,file,manager,relocate,folder,folders,files,rename,make directory,directories,organize,organizer,select,selector,database
 Requires at least: 3.2.0
 Tested up to: 3.3
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 
 You can make sub-directories in the upload directory, and move files into them.
 
@@ -56,6 +56,10 @@ the directory of the stable readme.txt, so in this case, `/tags/4.3/screenshot-1
 2. This is the second screen shot
 
 == Changelog ==
+
+= 1.0.2 =
+* Solve the problem that file manager shows root directory of your server when the upload directory is not writeable by the server.
+* Solve the problem that when moving items, items with same names in the destination directory are overwritten.
 
 = 1.0.1 =
 * Solve the problem that the plugin does not work under some kind of environment/setting (Especially windows servers).

@@ -3,7 +3,7 @@
 Plugin Name: Media File Manager
 Plugin URI: http://tempspace.net/plugins/?page_id=111
 Description: You can make sub-directories in the upload directory, and move files into them. At the same time, this plugin modifies the URLs/path names in the database. Also an alternative file-selector is added in the editing post/page screen, so you can pick up media files from the subfolders easily.
-Version: 1.0.2beta
+Version: 1.0.2
 Author: Atsushi Ueda
 Author URI: http://tempspace.net/plugins/
 License: GPL2
@@ -46,6 +46,7 @@ function mrelocator_magic_function()
 {
 	global $mrelocator_plugin_URL;
 	global $mrelocator_uploadurl;
+	global $mrelocator_uploaddir_t;
 	?>
 
 
@@ -54,6 +55,8 @@ function mrelocator_magic_function()
 
 	<div class="wrap">
 		<h2>Media File Manager</h2>
+
+		<?php if ($mrelocator_uploaddir_t['error']!="") {echo "<div class=\"error\"><p>".$mrelocator_uploaddir_t['error']."</p></div>";die();}?>
 
 		<div id="mrl_wrapper_all">
 			<div class="mrl_wrapper_pane" id="mrl_left_wrapper">
@@ -96,14 +99,8 @@ function mrelocator_magic_function()
 	}
 }
 
-
-function mrelocator_getdir_callback()
+function mrelocator_getdir($dir, &$ret_arr)
 {
-	global $wpdb;
-	global $mrelocator_plugin_URL;
-	global $mrelocator_uploaddir;
-
-	$dir = mrl_adjpath($mrelocator_uploaddir . "/" . $_POST['dir'], true);
 	$dh = @opendir ( $dir );
 
 	if ($dh === false) {
@@ -113,9 +110,20 @@ function mrelocator_getdir_callback()
 		$str = readdir($dh);
 		if ($str=="." || $str=="..") {$i--;continue;}
 		if ($str === FALSE) break;
-		$dir0[$i] = $str;
+		$ret_arr[$i] = $str;
 	}
-	if (!is_array($dir0)) die("");
+}
+
+function mrelocator_getdir_callback()
+{
+	global $wpdb;
+	global $mrelocator_plugin_URL;
+	global $mrelocator_uploaddir;
+
+	$dir = mrl_adjpath($mrelocator_uploaddir . "/" . $_POST['dir'], true);
+	$dir0=array();
+	mrelocator_getdir($dir, $dir0);
+	if (!count($dir0)) die("");
 	for ($i=0; $i<count($dir0); $i++) {
 		$name = $dir0[$i];
 		$dir1[$i]['ids'] = $i;
@@ -218,19 +226,21 @@ function mrelocator_dircmp($a, $b)
 	return strcasecmp($a['name'], $b['name']);
 }
 
+
 function mrelocator_mkdir_callback()
 {
 	global $wpdb;
 	global $mrelocator_uploaddir;
-	
+	ini_set("track_errors",true);
+
 	$dir = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir'], true);
 	$newdir = $_POST['newdir'];
 
 	$res = chdir($dir);
-	if (!$res) die();
+	if (!$res) die($php_errormsg);
 
-	$res = mkdir($newdir);
-	if (!$res) die();
+	$res = @mkdir($newdir);
+	if (!$res) {die($php_errormsg);}
 
 	die('');
 }
@@ -272,6 +282,10 @@ function mrelocator_rename_callback()
 	global $mrelocator_uploaddir;
 	global $mrelocator_uploadurl;
 
+	ignore_user_abort(true);
+	set_time_limit(900);
+	ini_set("track_errors",true);
+
 	$wpdb->show_errors();
 
 	$dir = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir'], true);
@@ -306,11 +320,11 @@ function mrelocator_rename_callback()
 	for ($i=0; $i<count($old); $i++) {
 		$res = @rename($dir.$old[$i], $dir.$new[$i]);
 //echo $dir.$old[$i]." -> ". $dir.$new[$i]."\n";
-		if (!res) {
+		if (!$res) {
 			for ($j=0; $j<$i; $j++) {
 				$res = @rename($dir.$new[$i], $dir.$old[$i]);
 			}
-			die("An error occured while rename files.");
+			die($php_errormsg);
 		}
 	}
 //die("OK");
@@ -385,13 +399,35 @@ function mrelocator_move_callback()
 	global $wpdb;
 $wpdb->show_errors();
 
+	ignore_user_abort(true);
+	set_time_limit(900);
+	ini_set("track_errors",true);
+
 	global $mrelocator_uploaddir;
 	global $mrelocator_uploadurl;
 	$dir_from = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir_from'], true);
 	$dir_to = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir_to'], true);
-
+	$dir_to_list = array();
+	mrelocator_getdir($dir_to, $dir_to_list);
+	
 	$items0 = $_POST['items'];
 	$items = explode("/",$items0);
+	
+	$same = "";
+	$samecnt=0;
+	for ($i=0; $i<count($items); $i++) {
+		for ($j=0; $j<count($dir_to_list); $j++) {
+			if ($items[$i] == $dir_to_list[$j]) {
+				if ($same != "") $same .= ", ";
+				$same .= $items[$i];
+				$samecnt++;
+			}
+		}
+	}
+	if ($samecnt) {
+		$msg = (($samecnt==1)?"A same name exists ":"Same names exist ")."in the destination directory:\n";
+		die($msg."\n".$same);
+	}
 
 	for ($i=0; $i<count($items); $i++) {
 		$res = @rename($dir_from . $items[$i] , $dir_to . $items[$i]);
@@ -399,7 +435,7 @@ $wpdb->show_errors();
 			for ($j=0; $j<$i; $j++) {
 				$res = @rename($dir_to . $items[$j] , $dir_from . $items[$j]);
 			}
-			die("Items could not be moved.");
+			die($php_errormsg);
 		}
 	}
 //die("OK");
