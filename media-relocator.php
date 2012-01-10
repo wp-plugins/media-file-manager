@@ -101,7 +101,7 @@ function mrelocator_magic_function()
 			</div>
 		</div>
 <div id="debug">.<br></div>
-<div id="mrl_test" style="display:nonee;">test<br></div>
+<div id="mrl_test" style="display:none;">test<br></div>
 
 	</div>
 
