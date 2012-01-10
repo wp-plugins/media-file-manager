@@ -3,7 +3,7 @@
 Plugin Name: Media File Manager
 Plugin URI: http://tempspace.net/plugins/?page_id=111
 Description: You can make sub-directories in the upload directory, and move files into them. At the same time, this plugin modifies the URLs/path names in the database. Also an alternative file-selector is added in the editing post/page screen, so you can pick up media files from the subfolders easily.
-Version: 1.0.2
+Version: 1.1.0
 Author: Atsushi Ueda
 Author URI: http://tempspace.net/plugins/
 License: GPL2
@@ -18,6 +18,7 @@ $mrelocator_plugin_URL = mrl_adjpath(plugins_url() . "/" . basename(dirname(__FI
 $mrelocator_uploaddir_t = wp_upload_dir();
 $mrelocator_uploaddir = mrl_adjpath($mrelocator_uploaddir_t['basedir'], true);
 $mrelocator_uploadurl = mrl_adjpath($mrelocator_uploaddir_t['baseurl'], true);
+
 
 function mrelocator_init() {
 	wp_enqueue_script('jquery');
@@ -36,8 +37,21 @@ add_action('admin_head', 'mrelocator_admin_register_head');
 add_action('admin_menu', 'mrelocator_plugin_menu');
 function mrelocator_plugin_menu()
 {
-	/*  設定画面の追加  */
-	add_submenu_page('upload.php', 'Media File Manager', 'Media File Manager', 'manage_options', 'mrelocator-submenu-handle', 'mrelocator_magic_function'); 
+	$current_user = wp_get_current_user();
+	if ( !($current_user instanceof WP_User) ) return;
+	$roles = $current_user->roles;
+	$accepted_roles = get_option("mediafilemanager_accepted_roles", "administrator");
+	$accepted = explode(",", $accepted_roles);
+
+	for ($i=0; $i<count($accepted); $i++) {
+		for ($j=0; $j<count($roles); $j++) {
+			if ($accepted[$i] == $roles[$j]) {
+				/*  設定画面の追加  */
+				add_submenu_page('upload.php', 'Media File Manager', 'Media File Manager', $roles[$j], 'mrelocator-submenu-handle', 'mrelocator_magic_function'); 
+				return;
+			}
+		}
+	}
 }
 
 
@@ -87,7 +101,7 @@ function mrelocator_magic_function()
 			</div>
 		</div>
 <div id="debug">.<br></div>
-<div id="mrl_test" style="display:none;">test<br></div>
+<div id="mrl_test" style="display:nonee;">test<br></div>
 
 	</div>
 
@@ -568,13 +582,125 @@ function mrelocator_isvideo($fname)
 	return false;
 }
 
+
+
+
+// Add a link to the config page on the setting menu of wordpress 
+add_action('admin_menu', 'mrelocator_admin_plugin_menu');
+function mrelocator_admin_plugin_menu()
+{
+	/*  Add a setting page  */
+	add_submenu_page('options-general.php', 
+		'Media File Manager plugin Configuration', 
+		'Media File Manager', 
+		'manage_options', 
+		'mrelocator_submenu-handle', 
+		'mrelocator_admin_magic_function'
+	); 
+}
+
+function mrelocator_get_roles(&$ret)
+{
+	global $wp_roles;
+	$i=0;
+	foreach($wp_roles->roles as $key=> $value1) { 
+		$ret[$i++] = $key;
+	}
+}
+
+/*  Display config page  */
+function mrelocator_admin_magic_function()
+{
+	$roles = Array();
+	mrelocator_get_roles(&$roles);
+
+	/*  Store setting information which POST has when this func is called by pressing [Save Change] btn  */
+	if ( isset($_POST['update_mrelocator_setting'] ) ) {
+		echo '<div id="message" class="updated fade"><p><strong>Options saved.</strong></p></div>';
+		//update_option('th_linklist_vnum', $_POST['th_linklist_vnum']);
+		$roles_val = "";
+		for ($i=0; $i<count($roles); $i++) {
+			if (!empty($_POST['roles_'.$roles[$i]])) {
+				if ($roles_val != "") $roles_val .= ",";
+				$roles_val .= $roles[$i];
+			}
+		}
+		update_option('mediafilemanager_accepted_roles', $roles_val);
+	}
+
+	?>
+	<div class="wrap">
+		<h2>Media File Manager plugin configurations</h2>
+
+		<form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
+		<?php 
+		wp_nonce_field('update-options');
+		$accepted_roles = get_option("mediafilemanager_accepted_roles", "administrator");
+		?>
+		<table class="form-table">
+		<tr>
+		<th>This plugin can be used by </th>
+		<td style="text-align: left;">
+<?php
+	$accepted = explode(",", $accepted_roles);
+	for($i=0; $i<count($roles); $i++) { 
+		$key = $roles[$i];
+
+		$ck = "";
+		for ($j=0; $j<count($accepted); $j++) {
+			if ($key == $accepted[$j]) {
+				$ck = "checked";
+				break;
+			}
+		}
+
+		echo '<input type="checkbox" name="roles_'.$key.'" id="roles_'.$key.'" '.$ck.'>'.$key.'</input><br>';
+	}
+?>
+
+		</td>
+		</tr>
+
+		</table>
+		<input type="hidden" name="action" value="update" />
+		<p class="submit">
+			<input type="submit" name="update_mrelocator_setting" class="button-primary" value="<?php _e('Save  Changes')?>" onclick="" />
+		</p>
+		</form>
+
+
+	</div>
+	<?php 
+	if ( isset($_POST['update_th_linklist_Setting'] ) ) {
+		//echo '<script type="text/javascript">alert("Options Saved.");</script>';
+	}
+}
+
+
+
+
+
+
+
 function mrelocator_test()
 {
 	global $wpdb;
+global $wp_roles;
+global $current_user;
+//print_r($wp_roles);
+//print_r($current_user);
+
+
+$current_user = wp_get_current_user();
+if ( !($current_user instanceof WP_User) )
+   return;
+$roles = $current_user->roles;
+print_r($roles);
+
+return;
 
 	$res = wp_get_attachment_metadata( 4272);
 	print_r($res);
-return;
 
 	//print_r(wp_get_attachment_metadata( 2916));
 

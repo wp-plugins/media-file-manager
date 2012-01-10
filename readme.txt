@@ -3,8 +3,8 @@ Contributors: aueda
 Donate link: http://tempspace.net/plugins/
 Tags: media,file,manager,explorer,relocate,folder,folders,files,rename,make directory,directories,organize,organizer,select,selector,database
 Requires at least: 3.2.0
-Tested up to: 3.3
-Stable tag: 1.0.2
+Tested up to: 3.3.1
+Stable tag: 1.1.0
 
 You can make sub-directories in the upload directory, and move files into them.
 
@@ -54,6 +54,9 @@ Install the plugin like usual ones. Then activate it.
 1. Media File Manager.
 
 == Changelog ==
+
+= 1.1.0 =
+* Added user access control by role.
 
 = 1.0.2 =
 * Solve the problem that file manager shows root directory of your server when the upload directory is not writeable by the server.
