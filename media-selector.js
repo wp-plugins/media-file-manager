@@ -243,6 +243,17 @@ function mrl_open_selector_insert_dialog_main(dat)
 		jQuery('#mrl_control').css('display','block');
 	});
 
+	jQuery('#urlnone').click(function(){
+		jQuery('#attachments_url').val(jQuery('#urlnone').data("link-url"))
+	});
+	jQuery('#urlfile').click(function(){
+		jQuery('#attachments_url').val(jQuery('#urlfile').data("link-url"))
+	});
+	jQuery('#urlpost').click(function(){
+		jQuery('#attachments_url').val(jQuery('#urlpost').data("link-url"))
+	});
+
+
 	jQuery('#send').click(function(){
 		var mrl_data = JSON.parse(jQuery('#mrl_data').html());
 		var title = jQuery('input#attachments_post_title').val();

@@ -3,8 +3,8 @@ Contributors: aueda
 Donate link: http://tempspace.net/plugins/
 Tags: media,file,manager,explorer,relocate,folder,folders,files,rename,make directory,directories,organize,organizer,select,selector,database
 Requires at least: 3.2.0
-Tested up to: 3.3.1
-Stable tag: 1.1.0
+Tested up to: 3.5.0
+Stable tag: 1.1.1
 
 You can make sub-directories in the upload directory, and move files into them.
 
@@ -55,18 +55,23 @@ Install the plugin like usual ones. Then activate it.
 
 == Changelog ==
 
+= 1.1.1 =
+* Solved the problem that unnecessary code was running when loading posts or pages.
+* Solved the problem that some buttons in the media-selector did not working.
+* Solved the problem that this plugin does not work with PHP5.4.
+
 = 1.1.0 =
 * Added user access control by role.
 
 = 1.0.2 =
-* Solve the problem that file manager shows root directory of your server when the upload directory is not writeable by the server.
-* Solve the problem that when moving items, items with same names in the destination directory are overwritten.
+* Solved the problem that file manager shows root directory of your server when the upload directory is not writeable by the server.
+* Solved the problem that when moving items, items with same names in the destination directory are overwritten.
 
 = 1.0.1 =
-* Solve the problem that the plugin does not work under some kind of environment/setting (Especially windows servers).
-* Solve the problem that URLs of medium/large images in posts/pages are not replaced.
-* Solve the problem that when a file is renamed to an existing name, the existing file is deleted.
-* Solve the problem that media selector does not work in the QuickPress.
+* Solved the problem that the plugin does not work under some kind of environment/setting (Especially windows servers).
+* Solved the problem that URLs of medium/large images in posts/pages are not replaced.
+* Solved the problem that when a file is renamed to an existing name, the existing file is deleted.
+* Solved the problem that media selector does not work in the QuickPress.
 
 = 1.0.0 =
 * Solved installation problem.

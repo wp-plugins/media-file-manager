@@ -220,9 +220,9 @@ function mrelocator_get_image_insert_screen_callback()
 			<th scope="row" class="label" valign="top"><label for="attachments_url"><span class="alignleft"><?php _e('Link URL');?></span><br class="clear"></label></th>
 			<td class="field">
 	<input class="text urlfield" id="attachments_url" name="attachments_url" value="<?php echo $url;?>" type="text"><br>
-	<button type="button" class="button urlnone" title=""><?php _e('None');?></button>
-	<button type="button" class="button urlfile" title="<?php echo $url;?>"><?php _e('File URL');?></button>
-	<button type="button" class="button urlpost" title="<?php echo bloginfo('url').'/?attachment_id='.$id;?>"><?php _e('Post URL');?></button>
+	<button type="button" id="urlnone" class="button urlnone" data-link-url=""><?php _e('None');?></button>
+	<button type="button" id="urlfile" class="button urlfile" data-link-url="<?php echo $url;?>"><?php _e('File URL');?></button>
+	<button type="button" id="urlpost" class="button urlpost" data-link-url="<?php echo bloginfo('url').'/?attachment_id='.$id;?>"><?php _e('Attachment Post URL');?></button>
 <p class="help"><?php _e('Enter a link URL or click above for presets.');?></p></td>
 		</tr>
 <?php if ($is_image): ?>

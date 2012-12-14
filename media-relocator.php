@@ -3,11 +3,15 @@
 Plugin Name: Media File Manager
 Plugin URI: http://tempspace.net/plugins/?page_id=111
 Description: You can make sub-directories in the upload directory, and move files into them. At the same time, this plugin modifies the URLs/path names in the database. Also an alternative file-selector is added in the editing post/page screen, so you can pick up media files from the subfolders easily.
-Version: 1.1.0
+Version: 1.1.1
 Author: Atsushi Ueda
 Author URI: http://tempspace.net/plugins/
 License: GPL2
 */
+
+if (!is_admin()) {
+	return;
+}
 
 define("MLOC_DEBUG", 0);
 
@@ -612,7 +616,7 @@ function mrelocator_get_roles(&$ret)
 function mrelocator_admin_magic_function()
 {
 	$roles = Array();
-	mrelocator_get_roles(&$roles);
+	mrelocator_get_roles($roles);
 
 	/*  Store setting information which POST has when this func is called by pressing [Save Change] btn  */
 	if ( isset($_POST['update_mrelocator_setting'] ) ) {
