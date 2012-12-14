@@ -179,7 +179,15 @@ MrlPaneClass.prototype.dir_ajax = function(target_dir,dirj)
 		jQuery('#'+this.id_pane).html("");
 		return new Array();
 	}
-	var dir = JSON.parse(dirj);
+	var dir;
+	try {
+		//dirj = dirj.substr(0, dirj.length-1);
+		dir = JSON.parse(dirj);
+	} catch (err) {
+		document.write('<table border="3"><tr><td width="200">');
+		document.write("<prea>"+err+"\n"+dirj+"</pre>");
+		document.write("</td></tr></table>");
+	}
 	var html = "";
 	var that = this;
 	this.last_chk_id = "";
