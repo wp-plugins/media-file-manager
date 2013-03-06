@@ -3,8 +3,8 @@ Contributors: aueda
 Donate link: http://tempspace.net/plugins/
 Tags: media,file,manager,explorer,relocate,folder,folders,files,rename,make directory,directories,organize,organizer,select,selector,database
 Requires at least: 3.2.0
-Tested up to: 3.5.0
-Stable tag: 1.1.1
+Tested up to: 3.5.1
+Stable tag: 1.2.0
 
 You can make sub-directories in the upload directory, and move files into them.
 
@@ -29,6 +29,8 @@ Before try this plugin, I recommend you to backup your contents(files, database)
 
 *To rename, right-click the icon and select 'Rename'. Then enter the new name.
 
+*To delete an empty folder, right-click the icon and select 'Delete'. You cannot delete files or non-empty folders. To delete them, use the built-in media manager of Wordpress.
+
 *To preview an item, right-click the icon of it, and select 'Preview'.
 
 (usage of file selector)
@@ -45,8 +47,6 @@ Install the plugin like usual ones. Then activate it.
 
 == Frequently Asked Questions ==
 
-= nothing in this section. =
-
 .
 
 == Screenshots ==
@@ -54,6 +54,11 @@ Install the plugin like usual ones. Then activate it.
 1. Media File Manager.
 
 == Changelog ==
+
+= 1.2.0 =
+* Added a feature of deleting empty directories.
+* Solve the problem that thumbnails of files other than images, audio or movies are broken in the media selector.
+* Improve styling
 
 = 1.1.1 =
 * Solved the problem that unnecessary code was running when loading posts or pages.

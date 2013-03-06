@@ -21,12 +21,14 @@ function mrelocator_get_media_list_callback()
 			$res[$i]->thumbnail = $mrelocator_plugin_URL . "/images/audio.png";
 		} else if (substr($res[$i]->post_mime_type,0,5)=='video') {
 			$res[$i]->thumbnail = $mrelocator_plugin_URL . "/images/video.png";
-		} else {
+		} else if (substr($res[$i]->post_mime_type,0,5)=='image') {
 			if (isset($meta['sizes']['thumbnail'])) {
 				$res[$i]->thumbnail = $res[$i]->subfolder . $meta['sizes']['thumbnail']['file'];
 			} else {
 				$res[$i]->thumbnail = $res[$i]->file;
 			}
+		} else {
+			$res[$i]->thumbnail = $mrelocator_plugin_URL . "/images/file.png";
 		}
 	}
 	echo json_encode($res);
@@ -278,41 +280,41 @@ add_action('wp_ajax_mrelocator_update_media_information', 'mrelocator_update_med
 
 
 /**
- * プラグインの処理を行います。
+ *  processing plugin
  */
 class MrlMediaSelector
 {
 	/**
-	 * プラグインの配置されたディレクトリを示す URL。
+	 *  The URL that points to the directory of this plugin.
 	 */
 	private $pluginDirUrl;
 
 	/**
-	 * インスタンスを初期化します。
+	 * Initialize instance
 	 */
 	public function __construct()
 	{
 		$this->pluginDirUrl = WP_PLUGIN_URL . '/' . array_pop( explode( DIRECTORY_SEPARATOR, dirname( __FILE__ ) ) ) . "/";
 
-		// ハンドラの登録
+		// register handler
 		if( is_admin() )
 		{
-			// アクション
+			// action
 			add_action( "admin_head_media_upload_mrlMS_form", array( &$this, "onMediaHead"      )     ); /* reading js */
 			add_action( "media_buttons",                         array( &$this, "onMediaButtons"   ), 20 );
 			add_action( "media_upload_mrlMS",                 "media_upload_mrlMS"                 );
 
-			// フィルタ
+			// filter
 			add_filter( "admin_footer", array( &$this, "onAddShortCode" ) );
 		}
 	}
 
 	/**
-	 * ショートコードを挿入する為のスクリプトをページに埋め込みます。
+	 *  embed a script to insert a shortcoed.
 	 */
 	public function onAddShortCode()
 	{
-		// 投稿の編集画面だけを対象とする
+		//  only in the posting page 投稿の編集画面だけを対象とする
 		if( strpos( $_SERVER[ "REQUEST_URI" ], "post.php"     ) ||
 			strpos( $_SERVER[ "REQUEST_URI" ], "post-new.php" ) ||
 			strpos( $_SERVER[ "REQUEST_URI" ], "page-new.php" ) ||
@@ -330,7 +332,7 @@ HTML;
 	}
 
 	/**
-	 * メディアボタンを設定する時に発生します。
+	 *  This function is called when setting a media button. 
 	 */
 	public function onMediaButtons()
 	{
@@ -342,11 +344,13 @@ HTML;
 		$title  = "Media-selector";
 		$button = "{$this->pluginDirUrl}images/media_folder.png";
 
-		echo '<a href="' . $iframe . $option . '" class="thickbox" title="' . $title . '"><img src="' . $button . '" alt="' . $title . '" /></a>';
+//		echo '<a href="' . $iframe . $option . '" class="thickbox" title="' . $title . '"><img src="' . $button . '" alt="' . $title . '" /></a>';
+		echo ' <a href="' . $iframe . $option . '" class="wp-media-buttons button add_media thickbox" title="' . $title . '">';
+		echo '<span class="wp-media-buttons-icon" ></span><span  style="background-color:#ff0;"> &nbsp;&nbsp;'.$title.'&nbsp;&nbsp; </a> </span></span>';
 	}
 
 	/**
-	 * メディアボタンから起動されたダイアログの内容を出力する為に発生します。************************************
+	 *  This function is called when showing contents in the dialog opened by pressing a media button.
 	 */
 	public function onMediaButtonPage()
 	{
@@ -363,7 +367,7 @@ HTML;
 	}
 
 	/**
-	 * メディアボタンから表示したウィンドウのヘッダが読み込まれる時に呼び出されます。
+	 *  This function is called when generating header of a window opened by a media button.
 	 */
 	public function onMediaHead()
 	{
@@ -371,7 +375,7 @@ HTML;
 	}
 
 	/**
-	 * メディアボタンから表示したウィンドウのタブが設定される時に呼び出されます。
+	 * This function is called when setting tabs in the window opened by pressing a media button.
 	 *
 	 * @param	$tabs	規定のタブ情報コレクション。
 	 *
@@ -379,20 +383,20 @@ HTML;
 	 */
 	function onModifyMediaTab( $tabs )
 	{
-		return array( "mrlMS" => "Insert a media" );
+		return array( "mrlMS" => "Choose a media" );
 	}
 }
 
-// プラグインのインスタンス生成
+// create an instance of plugin
 if( class_exists( MrlMediaSelector ) )
 {
 	$MrlMediaSelector = new MrlMediaSelector();
 
-	// 以下の関数は管理画面限定
+	// The following functions are called only in the administration page.
 	if( is_admin() )
 	{
 		/**
-		 * メディアボタンからダイアログが起動された時に呼び出されます。
+		 * This function is called when opening a windows by pressing a media button.メディアボタンからダイアログが起動された時に呼び出されます。
 		 */
 		function media_upload_mrlMS()
 		{
@@ -400,7 +404,7 @@ if( class_exists( MrlMediaSelector ) )
 		}
 
 		/**
-		 * メディアボタンから起動されたダイアログの内容を出力する為に呼び出されます。
+		 *  This function is called when showing contents in the dialog opened by pressing a media button.メディアボタンから起動されたダイアログの内容を出力する為に呼び出されます。
 		 */
 		function media_upload_mrlMS_form()
 		{

@@ -3,7 +3,7 @@
 Plugin Name: Media File Manager
 Plugin URI: http://tempspace.net/plugins/?page_id=111
 Description: You can make sub-directories in the upload directory, and move files into them. At the same time, this plugin modifies the URLs/path names in the database. Also an alternative file-selector is added in the editing post/page screen, so you can pick up media files from the subfolders easily.
-Version: 1.1.1
+Version: 1.2.0
 Author: Atsushi Ueda
 Author URI: http://tempspace.net/plugins/
 License: GPL2
@@ -132,6 +132,22 @@ function mrelocator_getdir($dir, &$ret_arr)
 	}
 }
 
+function mrelocator_isEmptyDir($dir)
+{
+	$dh = @opendir ( $dir );
+
+	if ($dh === false) {
+		return true;
+	}
+	for ($i=0;;$i++) {
+		$str = readdir($dh);
+		if ($str=="." || $str=="..") {$i--;continue;}
+		if ($str === FALSE) break;
+		return false;
+	}
+	return true;
+}
+
 function mrelocator_getdir_callback()
 {
 	global $wpdb;
@@ -147,6 +163,10 @@ function mrelocator_getdir_callback()
 		$dir1[$i]['ids'] = $i;
 		$dir1[$i]['name'] = $name;
 		$dir1[$i]['isdir'] = is_dir($dir."/".$name)?1:0;
+		$dir1[$i]['isemptydir'] = 0;
+		if ($dir1[$i]['isdir']) {
+			$dir1[$i]['isemptydir'] = mrelocator_isEmptyDir($dir."/".$name)?1:0;
+		}
 		$dir1[$i]['isthumb'] = 0;
 	}
 	// set no-rename flag to prevent causing problem. 
@@ -516,6 +536,21 @@ $wpdb->show_errors();
 	}
 }
 add_action('wp_ajax_mrelocator_move', 'mrelocator_move_callback');
+
+
+
+function mrelocator_delete_empty_dir_callback()
+{
+	global $mrelocator_uploaddir;
+	$dir = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir']."/".$_POST['name'], true);
+	if (!@rmdir($dir)) {
+		$error = error_get_last();
+		echo $error['message'];
+	}
+	die();
+}
+add_action('wp_ajax_mrelocator_delete_empty_dir', 'mrelocator_delete_empty_dir_callback');
+
 
 
 function mrelocator_url2path($url)

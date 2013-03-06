@@ -269,8 +269,39 @@ MrlPaneClass.prototype.prepare_checkboxes = function()
 			jQuery('#'+this.get_divid(i)).mousedown(function(ev) {
 				if (ev.which == 3) {
 					ev.preventDefault();
-					mrloc_right_menu.make(Array("Preview","Rename"));
+					var isDir = that.dir_list[jQuery(this).data('data')]['isdir'];
+					var arrMenu = new Array("Preview","Rename");
+					if (isDir) {
+						arrMenu.push("Delete");
+					}
+					mrloc_right_menu.make(arrMenu);
 					var that2 = this;
+					if (isDir) {
+					jQuery('#'+mrloc_right_menu.get_item_id(2)).click(function(){ //delete
+						var target = that.dir_list[jQuery(that2).data('data')];
+						var isEmptyDir = target['isemptydir'];
+						if (!isEmptyDir) {alert('Directory not empty.');return;}
+						var target = that.dir_list[jQuery(that2).data('data')];
+						var dirname = target['name'];
+						var data = {
+							action: 'mrelocator_delete_empty_dir',
+							dir: that.cur_dir,
+							name: dirname
+						};
+						mrl_ajax_in();
+						jQuery.post(ajaxurl, data, function(response) {
+							if (response != "") {alert(response);}
+							that.refresh();
+							if (that.cur_dir == that.opposite.cur_dir) {
+								that.opposite.refresh();
+							}
+							if (that.cur_dir+dirname+"/" == that.opposite.cur_dir) {
+								that.opposite.setdir(that.cur_dir);
+							}
+							mrl_ajax_out();
+						});
+					});
+					}
 					jQuery('#'+mrloc_right_menu.get_item_id(0)).click(function(){ //preview
 						var url = mrloc_url_root + (that.cur_dir+that.dir_list[jQuery(that2).data('data')]['name'])/*.substr(mrloc_document_root.length)*/;
 						window.open(url, 'mrlocpreview', 'toolbar=0,location=0,menubar=0')
