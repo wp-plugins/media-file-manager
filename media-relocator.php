@@ -3,7 +3,7 @@
 Plugin Name: Media File Manager
 Plugin URI: http://tempspace.net/plugins/?page_id=111
 Description: You can make sub-directories in the upload directory, and move files into them. At the same time, this plugin modifies the URLs/path names in the database. Also an alternative file-selector is added in the editing post/page screen, so you can pick up media files from the subfolders easily.
-Version: 1.2.0
+Version: 1.2.1
 Author: Atsushi Ueda
 Author URI: http://tempspace.net/plugins/
 License: GPL2
@@ -15,7 +15,7 @@ if (!is_admin()) {
 
 define("MLOC_DEBUG", 0);
 
-//function dbg2($str){$fp=fopen("/tmp/smdebug.txt","a");fwrite($fp,$str . "\n");fclose($fp);}
+//function dbg2($str){$fp=fopen("log.txt","a");fwrite($fp,$str . "\n");fclose($fp);}
 
 include 'set_document_root.php';
 $mrelocator_plugin_URL = mrl_adjpath(plugins_url() . "/" . basename(dirname(__FILE__)));
@@ -154,10 +154,12 @@ function mrelocator_getdir_callback()
 	global $mrelocator_plugin_URL;
 	global $mrelocator_uploaddir;
 
+	$errflg = false;
+
 	$dir = mrl_adjpath($mrelocator_uploaddir . "/" . $_POST['dir'], true);
 	$dir0=array();
 	mrelocator_getdir($dir, $dir0);
-	if (!count($dir0)) die("");
+	if (!count($dir0)) die("[]");
 	for ($i=0; $i<count($dir0); $i++) {
 		$name = $dir0[$i];
 		$dir1[$i]['ids'] = $i;
@@ -207,44 +209,50 @@ function mrelocator_getdir_callback()
 		if (count($dbres)) {
 			$dir1[$i]['id'] = $dbres[0]->post_id;
 			$res = wp_get_attachment_metadata( $dbres[0]->post_id );
-//if (!is_array($res)) {print_r ($res);echo 'ID='+$dbres[0]->post_id+"  ";}
-			if (array_key_exists('sizes', $res)) {
-				$min_size = -1;
-				$min_child = -1;
-				foreach ($res['sizes'] as $key => $value) {
-					for ($j=0; $j<count($dir1); $j++) {
-						if ($dir1[$j]['name'] == $res['sizes'][$key]['file']) {
-							$dir1[$j]['parent'] = $i;
-							$dir1[$j]['isthumb'] = 1;
-							$size = $res['sizes'][$key]['width']*$res['sizes'][$key]['height'];
-							if ($size < $min_size || $min_size==-1) {
-								$min_size = $size;
-								$min_child = $j;
-							}
-							break;
-						}
-					}
-				}
-				$dir1[$i]['thumbnail'] = $min_child;
-				$dir1[$i]['thumbnail_url'] = mrelocator_path2url($dir .  $dir1[$min_child]['name']);
-				$backup_sizes = get_post_meta( $dbres[0]->post_id, '_wp_attachment_backup_sizes', true );
-				$meta = wp_get_attachment_metadata( $dbres[0]->post_id );
-				if ( is_array($backup_sizes) ) {
-					foreach ( $backup_sizes as $size ) {
+			if (!is_array($res)) {
+				//mrelocator_log(print_r($res,true));
+				//echo "An error occured. Please download log file and send to the plugin author.";
+				$errflg = true;
+			} 
+			if (is_array($res)) {
+				if (array_key_exists('sizes', $res)) {
+					$min_size = -1;
+					$min_child = -1;
+					foreach ($res['sizes'] as $key => $value) {
 						for ($j=0; $j<count($dir1); $j++) {
-							if ($dir1[$j]['name'] == $size['file']) {
+							if ($dir1[$j]['name'] == $res['sizes'][$key]['file']) {
 								$dir1[$j]['parent'] = $i;
 								$dir1[$j]['isthumb'] = 1;
+								$size = $res['sizes'][$key]['width']*$res['sizes'][$key]['height'];
+								if ($size < $min_size || $min_size==-1) {
+									$min_size = $size;
+									$min_child = $j;
+								}
 								break;
+							}
+						}
+					}
+					$dir1[$i]['thumbnail'] = $min_child;
+					$dir1[$i]['thumbnail_url'] = mrelocator_path2url($dir .  $dir1[$min_child]['name']);
+					$backup_sizes = get_post_meta( $dbres[0]->post_id, '_wp_attachment_backup_sizes', true );
+					$meta = wp_get_attachment_metadata( $dbres[0]->post_id );
+					if ( is_array($backup_sizes) ) {
+						foreach ( $backup_sizes as $size ) {
+							for ($j=0; $j<count($dir1); $j++) {
+								if ($dir1[$j]['name'] == $size['file']) {
+									$dir1[$j]['parent'] = $i;
+									$dir1[$j]['isthumb'] = 1;
+									break;
+								}
 							}
 						}
 					}
 				}
 			}
 		}
-		if ($dir1[$i]['thumbnail_url']=="" && $dir1[$i]['isthumb']==0) {
+		if ($dir1[$i]['thumbnail_url']=="" && $dir1[$i]['isthumb']==0 || $dir1[$i]['thumbnail']==-1) {
 			$fsize = filesize($dir . $dir1[$i]['name']);
-			if ($fsize>1 && $fsize<32768) {
+			if ($fsize>1 && $fsize < 131072) {
 				$dir1[$i]['thumbnail_url'] = mrelocator_path2url($dir .  $dir1[$i]['name']);
 			} else {
 				$dir1[$i]['thumbnail_url'] = $mrelocator_plugin_URL . "/images/no_thumb.png";
@@ -252,6 +260,9 @@ function mrelocator_getdir_callback()
 		}
 	}
 	echo json_encode($dir1);
+	
+	if ($errflg) mrelocator_log(json_encode($dir1));
+
 	die();
 }
 
@@ -280,7 +291,7 @@ function mrelocator_mkdir_callback()
 	$res = @mkdir($newdir);
 	if (!$res) {die($php_errormsg);}
 
-	die('');
+	die('Success');
 }
 add_action('wp_ajax_mrelocator_mkdir', 'mrelocator_mkdir_callback');
 
@@ -331,7 +342,7 @@ function mrelocator_rename_callback()
 
 	$old[0] = $_POST['from'];
 	$new[0] = $_POST['to'];
-	if ($old[0] == $new[0]) die();
+	if ($old[0] == $new[0]) die("Success");
 
 	$old_url =  mrelocator_path2url($dir . $old[0]);
 	$dbres = $wpdb->get_results("select post_id from $wpdb->postmeta where meta_value = '" . $subdir . $old[0] . "'");
@@ -421,7 +432,7 @@ function mrelocator_rename_callback()
 	
 		$rc=mysql_query("COMMIT", $wpdb->dbh);
 
-		die();
+		die("Success");
 	} catch (Exception $e) {
 		mysql_query("ROLLBACK", $wpdb->dbh);
 		for ($j=0; $j<count($new); $j++) {
@@ -526,7 +537,7 @@ $wpdb->show_errors();
 
 		mysql_query("COMMIT", $wpdb->dbh);
 
-		die("");
+		die("Success");
 	} catch (Exception $e) {
 		mysql_query("ROLLBACK", $wpdb->dbh);
 		for ($j=0; $j<count($items); $j++) {
@@ -545,9 +556,9 @@ function mrelocator_delete_empty_dir_callback()
 	$dir = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir']."/".$_POST['name'], true);
 	if (!@rmdir($dir)) {
 		$error = error_get_last();
-		echo $error['message'];
+		die($error['message']);
 	}
-	die();
+	die("Success");
 }
 add_action('wp_ajax_mrelocator_delete_empty_dir', 'mrelocator_delete_empty_dir_callback');
 
@@ -564,16 +575,15 @@ function mrelocator_url2path($url)
 
 function mrelocator_path2url($pathname)
 {
-	$path0 = str_replace("\\","/",$pathname);
-	$path = str_replace("//","/",$path0);
-	if (stripos($path0,"//")===0) $path = "/".$path;
-	$urlroot = mrelocator_get_urlroot();
-	$docroot = $_SERVER['DOCUMENT_ROOT'];
-	if (stripos($path, $docroot) != 0) {
-		return "";
-	}
-	$ret1 = substr($path, strlen($docroot));
-	return mrl_adjpath( $urlroot."/".$ret1 );
+	$wu = wp_upload_dir();
+
+	$wp_content_dir = str_replace("\\","/", $wu['basedir']);
+	$wp_content_dir = str_replace("//","/", $wp_content_dir);
+	$path = str_replace("\\","/",$pathname);
+	$path = str_replace("//","/",$path);
+
+	$ret = str_replace($wp_content_dir, $wu['baseurl'], $path);
+	return $ret;
 }
 
 function mrelocator_get_urlroot()
@@ -709,6 +719,20 @@ function mrelocator_admin_magic_function()
 
 
 	</div>
+	<a href="../wp-content/plugins/media-file-manager/output_log.php">Download Log</a>
+
+	&nbsp;&nbsp;<a href="#" onclick="delete_log()">Delete log</a>
+	<script type="text/javascript">
+	function delete_log() {
+		var data = {
+			action: 'mrelocator_delete_log'
+		};
+		jQuery.post(ajaxurl, data, function(response) {
+			alert(response);
+		});
+	}
+	</script>
+
 	<?php 
 	if ( isset($_POST['update_th_linklist_Setting'] ) ) {
 		//echo '<script type="text/javascript">alert("Options Saved.");</script>';
@@ -775,6 +799,43 @@ print_r($intermediate);
 	die();
 }
 add_action('wp_ajax_mrelocator_test', 'mrelocator_test');
+
+
+function media_file_manager_install() {
+
+	global $wpdb;
+	$mfm_db_version = "1.00";
+	$table_name = $wpdb->prefix . "media_file_manager_log";
+	$installed_ver = get_option( "mfm_db_version" ,"0" );
+
+	if( $installed_ver != $mfm_db_version ) {
+		require_once(ABSPATH . 'wp-admin/includes/upgrade.php');	
+		$sql = "CREATE TABLE " . $table_name . " (
+			date_time datetime,
+			log_data text
+		) DEFAULT CHARSET utf8 COLLATE utf8_unicode_ci;";
+		dbDelta($sql);
+
+		update_option("mfm_db_version", $mfm_db_version);
+	}
+}
+register_activation_hook(WP_PLUGIN_DIR . '/media-file-manager/media-relocator.php', 'media_file_manager_install');
+
+function mrelocator_log($str)
+{
+	global $wpdb;
+	$str = mysql_real_escape_string($str);
+	$sql = "INSERT INTO ". $wpdb->prefix."media_file_manager_log (date_time,log_data) VALUES ('" . date("Y-m-d H:i:s") . "', '" . $str . "');";
+	$wpdb->query($sql);
+}
+
+function mrelocator_delete_log_callback()
+{
+	global $wpdb;
+	$ret = $wpdb->query("TRUNCATE TABLE ".$wpdb->prefix."media_file_manager_log");
+	die ($ret===FALSE ? "failure":"success");
+}
+add_action('wp_ajax_mrelocator_delete_log', 'mrelocator_delete_log_callback');
 
 
 include 'media-selector.php';

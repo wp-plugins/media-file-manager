@@ -42,7 +42,7 @@ function mrelocator_get_media_subdir_callback()
 	global $wpdb;
 	$res = $wpdb->get_results(
 		"SELECT  ".
-		"DISTINCT(SUBSTR(meta_value,1, LENGTH(meta_value)-INSTR(REVERSE(meta_value),'/')+1)) AS subdir ".
+		"DISTINCT LEFT(meta_value, CHAR_LENGTH(meta_value)-CHAR_LENGTH(SUBSTRING_INDEX(meta_value, '/', -1))) AS subdir ".
 		"FROM $wpdb->postmeta ".
 		"WHERE meta_key = '_wp_attached_file' ".
 		"AND meta_value LIKE '%/%' ".
@@ -294,7 +294,8 @@ class MrlMediaSelector
 	 */
 	public function __construct()
 	{
-		$this->pluginDirUrl = WP_PLUGIN_URL . '/' . array_pop( explode( DIRECTORY_SEPARATOR, dirname( __FILE__ ) ) ) . "/";
+		$exp = explode( DIRECTORY_SEPARATOR, dirname( __FILE__ ) );
+		$this->pluginDirUrl = WP_PLUGIN_URL . '/' . array_pop( $exp ) . "/";
 
 		// register handler
 		if( is_admin() )
@@ -388,7 +389,7 @@ HTML;
 }
 
 // create an instance of plugin
-if( class_exists( MrlMediaSelector ) )
+if( 1 )
 {
 	$MrlMediaSelector = new MrlMediaSelector();
 

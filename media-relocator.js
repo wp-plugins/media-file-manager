@@ -54,7 +54,7 @@ jQuery(document).ready(function()
 			action: 'mrelocator_test'
 		};
 		jQuery.post(ajaxurl, data, function(response) {
-			alert(response);
+			alert("mrelocator_test: "+response);
 		});
 	});
 
@@ -108,7 +108,7 @@ var MrlPaneClass = function(id_root, flg_chkbox)
 			};
 			mrl_ajax_in();
 			jQuery.post(ajaxurl, data, function(response) {
-				if (response!="") alert(response);
+				if (response.search(/Success/i) < 0) alert("mrelocator_mkdir: "+response);
 
 				if (that.cur_dir == that.opposite.cur_dir) {
 					that.refresh();
@@ -172,9 +172,9 @@ MrlPaneClass.prototype.dir_ajax = function(target_dir,dirj)
 	}
 	this.cur_dir = target_dir;
 	jQuery('#'+this.id_dir).val(target_dir);
-
 	var disp_num = 0;
 
+	dirj = jQuery.trim(dirj);
 	if (dirj=="") {
 		jQuery('#'+this.id_pane).html("");
 		return new Array();
@@ -184,6 +184,7 @@ MrlPaneClass.prototype.dir_ajax = function(target_dir,dirj)
 		//dirj = dirj.substr(0, dirj.length-1);
 		dir = JSON.parse(dirj);
 	} catch (err) {
+		alert(dirj+" : "+mrl_toHex(dirj));
 		document.write('<table border="3"><tr><td width="200">');
 		document.write("<prea>"+err+"\n"+dirj+"</pre>");
 		document.write("</td></tr></table>");
@@ -290,7 +291,7 @@ MrlPaneClass.prototype.prepare_checkboxes = function()
 						};
 						mrl_ajax_in();
 						jQuery.post(ajaxurl, data, function(response) {
-							if (response != "") {alert(response);}
+							if (response.search(/Success/i) < 0) {alert("mrelocator_delete_empty_dir: "+response);}
 							that.refresh();
 							if (that.cur_dir == that.opposite.cur_dir) {
 								that.opposite.refresh();
@@ -331,7 +332,7 @@ MrlPaneClass.prototype.prepare_checkboxes = function()
 							};
 							mrl_ajax_in();
 							jQuery.post(ajaxurl, data, function(response) {
-								if (response != "") alert(response);
+								if (response.search(/Success/i) < 0) alert("mrelocator_rename: "+response);
 								if (that.opposite.cur_dir.indexOf(that.cur_dir+old_name+"/")===0) {
 									that.opposite.setdir(that.cur_dir+mrloc_input_text.result+"/"+that.opposite.cur_dir.substr((that.cur_dir+old_name+"/").length));
 								}
@@ -430,7 +431,7 @@ function mrloc_move(pane_from, pane_to)
 	};
 	mrl_ajax_in();
 	jQuery.post(ajaxurl, data, function(response) {
-		if (response!="") alert(response);
+		if (response.search(/Success/i) < 0) alert("mrloc_move(): "+response);
 		pane_left.refresh();
 		pane_right.refresh();
 		mrl_ajax_out();
@@ -641,5 +642,13 @@ function mrl_ajax_out()
 		document.body.style.cursor = "default";
 		jQuery(document).unbind('click.mrl');
 	}
+}
+
+function mrl_toHex(str) {
+    var hex = '';
+    for(var i=0;i<str.length;i++) {
+        hex += ''+str.charCodeAt(i).toString(16);
+    }
+    return hex;
 }
 
