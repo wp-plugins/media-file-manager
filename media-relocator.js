@@ -21,7 +21,7 @@ jQuery(document).ready(function()
 	pane_left.opposite = pane_right;
 	pane_right.opposite = pane_left;
 
-	//adjust_layout();
+	adjust_layout();
 
 	pane_left.setdir("/");
 	pane_right.setdir("/");
@@ -58,13 +58,7 @@ jQuery(document).ready(function()
 		});
 	});
 
-	jQuery(window).resize(function() {
-		//jQuery('#debug').html(jQuery('#wpbody').height());
-		adjust_layout();
-	});
 
-	
-	adjust_layout();
 });
 
 
@@ -202,7 +196,7 @@ MrlPaneClass.prototype.dir_ajax = function(target_dir,dirj)
 	for (i=0; i<dir.length; i++) {
 		if (dir[i].isthumb) continue;
 		this.dir_disp_list[disp_num] = i;
-		html = html+'<div style="vertical-align:middle;display:block;height:55px;clear:both; position:relative;">';
+		html = html+'<div style="vertical-align:middle;display:block;height:55px;clear:both; background-color:#fff;position:relative;">';
 		if (this.flg_chkbox) {
 			html = html + '<div style="float:left;"><input type="checkbox" id="'+this.get_chkid(disp_num)+'"></div>';
 		}
@@ -616,17 +610,12 @@ function adjust_layout()
 	var width_center =jQuery('#mrl_center_wrapper').width(); 
 	var height_mrl_box = jQuery('.mrl_box1').height();
 
-	var position = jQuery('#wpbody').offset();
-	height_all = jQuery(window).height() - position.top - 100;
-
-
-
-	var pane_w = (width_all - width_center)/2-16;
+	var pane_w = (width_all - width_center)/2-1;
 	jQuery('.mrl_wrapper_pane').width(pane_w);
 	jQuery('.mrl_path').width(pane_w);
 	jQuery('.mrl_pane').width(pane_w);
 	jQuery('.mrl_pane').height(height_all - height_mrl_box);	
-	jQuery('.mrl_filename').width(pane_w-32);
+	jQuery('.mrl_filename').width(pane_w-200);
 }
 
 

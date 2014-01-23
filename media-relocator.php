@@ -3,7 +3,7 @@
 Plugin Name: Media File Manager
 Plugin URI: http://tempspace.net/plugins/?page_id=111
 Description: You can make sub-directories in the upload directory, and move files into them. At the same time, this plugin modifies the URLs/path names in the database. Also an alternative file-selector is added in the editing post/page screen, so you can pick up media files from the subfolders easily.
-Version: 1.3.0_test_140123
+Version: 1.2.1
 Author: Atsushi Ueda
 Author URI: http://tempspace.net/plugins/
 License: GPL2
@@ -15,7 +15,7 @@ if (!is_admin()) {
 
 define("MLOC_DEBUG", 0);
 
-function dbg2($str){}//$fp=fopen("log.txt","a");fwrite($fp,$str . "\n");fclose($fp);}
+//function dbg2($str){$fp=fopen("log.txt","a");fwrite($fp,$str . "\n");fclose($fp);}
 
 include 'set_document_root.php';
 $mrelocator_plugin_URL = mrl_adjpath(plugins_url() . "/" . basename(dirname(__FILE__)));
@@ -576,6 +576,7 @@ function mrelocator_url2path($url)
 function mrelocator_path2url($pathname)
 {
 	$wu = wp_upload_dir();
+
 	$wp_content_dir = str_replace("\\","/", $wu['basedir']);
 	$wp_content_dir = str_replace("//","/", $wp_content_dir);
 	$path = str_replace("\\","/",$pathname);
@@ -674,15 +675,6 @@ function mrelocator_admin_magic_function()
 			}
 		}
 		update_option('mediafilemanager_accepted_roles', $roles_val);
-
-		$roles_val = "";
-		for ($i=0; $i<count($roles); $i++) {
-			if (!empty($_POST['roles_sel_'.$roles[$i]])) {
-				if ($roles_val != "") $roles_val .= ",";
-				$roles_val .= $roles[$i];
-			}
-		}
-		update_option('mediafilemanager_accepted_roles_selector', $roles_val);
 	}
 
 	?>
@@ -693,11 +685,10 @@ function mrelocator_admin_magic_function()
 		<?php 
 		wp_nonce_field('update-options');
 		$accepted_roles = get_option("mediafilemanager_accepted_roles", "administrator");
-		$accepted_roles_selector = get_option("mediafilemanager_accepted_roles_selector", "administrator,editor,author,contributor,subscriber");
 		?>
 		<table class="form-table">
 		<tr>
-		<th>File Manager can be used by </th>
+		<th>This plugin can be used by </th>
 		<td style="text-align: left;">
 <?php
 	$accepted = explode(",", $accepted_roles);
@@ -712,36 +703,12 @@ function mrelocator_admin_magic_function()
 			}
 		}
 
-		echo '<input type="checkbox" name="roles_'.$key.'" id="roles_'.$key.'" '.$ck.'>'.$key.'</input><br>'."\n";
+		echo '<input type="checkbox" name="roles_'.$key.'" id="roles_'.$key.'" '.$ck.'>'.$key.'</input><br>';
 	}
 ?>
 
 		</td>
 		</tr>
-		<th>File Selector can bu used by </th>
-		<td style="text-align: left;">
-<?php
-	$accepted = explode(",", $accepted_roles_selector);
-	for($i=0; $i<count($roles); $i++) { 
-		$key = $roles[$i];
-
-		$ck = "";
-		for ($j=0; $j<count($accepted); $j++) {
-			if ($key == $accepted[$j]) {
-				$ck = "checked";
-				break;
-			}
-		}
-
-		echo '<input type="checkbox" name="roles_sel_'.$key.'" id="roles_sel_'.$key.'" '.$ck.'>'.$key.'</input><br>'."\n";
-	}
-?>
-
-		</td>
-		</tr>
-		
-		<tr>
-		<td>
 
 		</table>
 		<input type="hidden" name="action" value="update" />
