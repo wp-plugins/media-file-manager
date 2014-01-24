@@ -7,7 +7,8 @@
 
 #mrl_wrapper_all {
 	position:relative;
-	width:800px;
+	//width:800px;
+	width:auto;
 	height:655px;
 	bborder: solid 1px #0ff;
 }
@@ -18,6 +19,8 @@
 	height:18px;
 	background-color:#ddd;
 	border: 1px solid #888;
+	font-size: 14px;
+	padding: 0px;
 }
 
 .mrl_wrapper_pane {

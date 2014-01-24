@@ -337,6 +337,10 @@ HTML;
 	 */
 	public function onMediaButtons()
 	{
+		$cur_roles0 = get_option('mediafilemanager_accepted_roles_selector', 'administrator,editor,author,contributor,subscriber');
+		$cur_roles = explode(',', $cur_roles0);
+		if (!check_user_role($cur_roles)) return;
+
 		global $post_ID, $temp_ID;
 
 		$id     = (int)( 0 == $post_ID ? $temp_ID : $post_ID );
@@ -388,8 +392,10 @@ HTML;
 	}
 }
 
+
+
 // create an instance of plugin
-if( 1 )
+if (1) 
 {
 	$MrlMediaSelector = new MrlMediaSelector();
 
@@ -422,5 +428,35 @@ if( 1 )
 			$MrlMediaSelector->onMediaButtonPage();
 		}
 	}
+}
+//add_action( 'admin_init', 'MrlMediaButtonInit' );
+
+function check_user_role($roles,$user_id=NULL) {
+	// Get user by ID, else get current user
+	if ($user_id)
+		$user = get_userdata($user_id);
+	else
+		$user = wp_get_current_user();
+ 
+	// No user found, return
+	if (empty($user))
+		return FALSE;
+ 
+	// Append administrator to roles, if necessary
+	if (!in_array('administrator',$roles))
+		$roles[] = 'administrator';
+ 
+	// Loop through user roles
+	//echo "<pre>";print_r($roles);echo "</pre>";
+	foreach ($user->roles as $role) {
+	//echo $role;
+		// Does user have role
+		if (in_array($role,$roles)) {
+			return TRUE;
+		}
+	}
+ //echo "<br>false<br>";
+	// User not in roles
+	return FALSE;
 }
 ?>
