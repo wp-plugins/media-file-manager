@@ -3,7 +3,7 @@
 Plugin Name: Media File Manager
 Plugin URI: http://tempspace.net/plugins/?page_id=111
 Description: You can make sub-directories in the upload directory, and move files into them. At the same time, this plugin modifies the URLs/path names in the database. Also an alternative file-selector is added in the editing post/page screen, so you can pick up media files from the subfolders easily.
-Version: 1.3.0_test_140123
+Version: 1.3.0
 Author: Atsushi Ueda
 Author URI: http://tempspace.net/plugins/
 License: GPL2
@@ -15,7 +15,7 @@ if (!is_admin()) {
 
 define("MLOC_DEBUG", 0);
 
-function dbg2($str){}//$fp=fopen("log.txt","a");fwrite($fp,$str . "\n");fclose($fp);}
+function dbg2($str){}//{$fp=fopen("log.txt","a");fwrite($fp,$str . "\n");fclose($fp);}
 
 include 'set_document_root.php';
 $mrelocator_plugin_URL = mrl_adjpath(plugins_url() . "/" . basename(dirname(__FILE__)));
@@ -184,7 +184,7 @@ function mrelocator_getdir_callback()
 			}
 		}
 	}
-	usort($dir1, mrelocator_dircmp);
+	usort($dir1, "mrelocator_dircmp");
 	for ($i=count($dir1)-1; $i>=0; $i--) {
 		$dir1[$i]['id'] = "";
 		if ($dir1[$i]['isdir']) {
@@ -312,7 +312,6 @@ function mrelocator_get_subdir($dir)
 {
 	global $mrelocator_uploaddir;
 	$upload_dir = $mrelocator_uploaddir;
-	$upload_dir = substr($upload_dir, 0, strlen($upload_dir)-strlen($upload_dir_a['subdir']));
 	$subdir = substr($dir,  strlen($upload_dir));
 	if (substr($subdir,0,1)=="/" || substr($subdir,0,1)=="\\") {
 		$subdir = substr($subdir, 1);
