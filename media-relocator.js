@@ -85,7 +85,7 @@ var MrlPaneClass = function(id_root, flg_chkbox)
 	this.flg_chkbox = flg_chkbox;
 	this.checked_loc = -1;
 	this.last_div_id = "";
-	this.chk_prepare_id = 0;
+	this.chk_prepare_id = -1;
 	this.opposite=this;
 
 	var that = this;
@@ -221,12 +221,13 @@ MrlPaneClass.prototype.dir_ajax = function(target_dir,dirj)
 
 	//if (this.flg_chkbox) {
 		function callMethod_chkprepare() {that.prepare_checkboxes();}
-		this.chk_prepare_id = setInterval(callMethod_chkprepare, 20);
+		if (this.chk_prepare_id == -1) {
+			this.chk_prepare_id = setInterval(callMethod_chkprepare, 20);
+		}
 	//}
 	jQuery('#'+this.id_wrapper).css('cursor:default');
 	return dir;
 }
-
 
 
 // function name: MrlPaneClass::prepare_checkboxes
@@ -238,6 +239,7 @@ MrlPaneClass.prototype.prepare_checkboxes = function()
 
 	if (jQuery('#'+this.last_div_id).length>0) {
 		clearInterval(this.chk_prepare_id);
+		this.chk_prepare_id = -1;
 
 		for (i=0; i<this.dir_disp_list.length; i++) {
 			var idx = this.dir_disp_list[i];
@@ -407,17 +409,51 @@ MrlPaneClass.prototype.chdir = function(dir)
 // function name: MrlPaneClass::move
 // description : moving checked files/directories
 // argument : (pane_from)pane object; (pane_to)pane object 
-function mrloc_move(pane_from, pane_to)
+var global_pane_from = "";
+var global_pane_to = "";
+var global_num_par_no = 0;
+var global_move_no = 0;
+var global_move_cnt = 0;
+var global_move_continue=0;
+function mrloc_move(pane_from, pane_to, no)
 {
+	no = typeof no !== 'undefined' ? no : 0;
+	var cnt = global_move_cnt;
+	
+	if (no==0) {
+		global_pane_from = pane_from;
+		global_pane_to = pane_to;
+		global_move_cnt = 0;
+		mrloc_move(pane_from, pane_to, 1);
+		return;
+	}
+	
+	var num_par_no = 50;
+	global_num_par_no = num_par_no;
+	global_move_continue = 0;
+	var no_from = (no-1)*num_par_no;
+	var no_to = no_from + num_par_no-1;
+
+	//alert(no+" "+global_pane_from.cur_dir+"-"+global_pane_to.cur_dir+"   "+no_from+"-"+no_to);
+
+	
 	var i,j;
 	var flist="";
 
 	if (pane_from.cur_dir == pane_to.cur_dir) return;
 
+	var chk_no = -1;
 	// make list of checked item
 	for (i=0; i<pane_from.dir_disp_list.length; i++) {
 		var attr = jQuery('#'+pane_from.get_chkid(i)).attr('checked');
 		if (attr=='checked' || attr===true) {
+			chk_no ++;
+			if (chk_no<no_from) continue;
+			if (chk_no>no_to) {
+				global_move_continue = 1;
+				continue;
+			}
+			cnt++;
 			flist += pane_from.dir_list[pane_from.dir_disp_list[i]].name + "/";
 			for (j=0; j<pane_from.dir_list.length; j++) {
 				if (pane_from.dir_list[j].isthumb && pane_from.dir_list[j].parent == pane_from.dir_disp_list[i]) {
@@ -426,8 +462,14 @@ function mrloc_move(pane_from, pane_to)
 			}
 		}
 	}
-	if (flist=="") return;
+
+	if (flist=="") {
+		if (no == 1) {
+			return;
+		}
+	}
 	flist = flist.substr(0, flist.length-1);
+	//alert(flist);
 
 	var data = {
 		action: 'mrelocator_move',
@@ -435,12 +477,22 @@ function mrloc_move(pane_from, pane_to)
 		dir_to: pane_to.cur_dir,
 		items: flist
 	};
-	mrl_ajax_in();
+	
+	global_move_no = no;
+	global_move_cnt = cnt;
+
+	if (no == 1) {
+		mrl_ajax_in();
+	}
 	jQuery.post(ajaxurl, data, function(response) {
 		if (response.search(/Success/i) < 0) alert("mrloc_move(): "+response);
-		pane_left.refresh();
-		pane_right.refresh();
-		mrl_ajax_out();
+		if (global_move_continue) {
+			mrloc_move(global_pane_from, global_pane_to, global_move_no+1);
+		} else {
+			pane_left.refresh();
+			pane_right.refresh();
+			mrl_ajax_out();
+		}
 	});
 }
 

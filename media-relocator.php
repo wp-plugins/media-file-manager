@@ -3,11 +3,13 @@
 Plugin Name: Media File Manager
 Plugin URI: http://tempspace.net/plugins/?page_id=111
 Description: You can make sub-directories in the upload directory, and move files into them. At the same time, this plugin modifies the URLs/path names in the database. Also an alternative file-selector is added in the editing post/page screen, so you can pick up media files from the subfolders easily.
-Version: 1.3.0
+Version: 1.3.1pre
 Author: Atsushi Ueda
 Author URI: http://tempspace.net/plugins/
 License: GPL2
 */
+
+set_time_limit(600);
 
 if (!is_admin()) {
 	return;
@@ -15,7 +17,7 @@ if (!is_admin()) {
 
 define("MLOC_DEBUG", 0);
 
-function dbg2($str){}//{$fp=fopen("log.txt","a");fwrite($fp,$str . "\n");fclose($fp);}
+function dbg2($str){$fp=fopen("/tmp/log.txt","a");fwrite($fp,$str . "\n");fclose($fp);}
 
 include 'set_document_root.php';
 $mrelocator_plugin_URL = mrl_adjpath(plugins_url() . "/" . basename(dirname(__FILE__)));
@@ -37,7 +39,7 @@ function mrelocator_admin_register_head() {
 add_action('admin_head', 'mrelocator_admin_register_head');
 
 
-// 設定メニューの追加
+// add a setting menu
 add_action('admin_menu', 'mrelocator_plugin_menu');
 function mrelocator_plugin_menu()
 {
@@ -50,7 +52,7 @@ function mrelocator_plugin_menu()
 	for ($i=0; $i<count($accepted); $i++) {
 		for ($j=0; $j<count($roles); $j++) {
 			if ($accepted[$i] == $roles[$j]) {
-				/*  設定画面の追加  */
+				/*  add a configuration screen  */
 				add_submenu_page('upload.php', 'Media File Manager', 'Media File Manager', $roles[$j], 'mrelocator-submenu-handle', 'mrelocator_magic_function'); 
 				return;
 			}
@@ -59,7 +61,7 @@ function mrelocator_plugin_menu()
 }
 
 
-/*  設定画面出力  */
+/*  show a configuration screen  */
 function mrelocator_magic_function()
 {
 	global $mrelocator_plugin_URL;
@@ -102,6 +104,7 @@ function mrelocator_magic_function()
 				</div>
 				<div style="clear:both;"></div>
 				<div class="mrl_pane" id="mrl_right_pane"></div>
+
 			</div>
 		</div>
 <div id="debug">.<br></div>
@@ -173,18 +176,47 @@ function mrelocator_getdir_callback()
 	}
 	// set no-rename flag to prevent causing problem. 
 	// (When "abc.jpg" and "abc.jpg.jpg" exist, and rename "abc.jpg", "abc.jpg.jpg" in posts will be affected.)
-	for ($i=0; $i<count($dir0); $i++) {
+	usort($dir1, "mrelocator_dircmp");
+	for ($i=0; $i<count($dir1); $i++) {
 		$dir1[$i]['norename'] = 0;
-		for ($j=0; $j<count($dir1); $j++) {
-			if ($j==$i) continue;
+	}
+	for ($i=0; $i<count($dir1); $i++) {
+		for ($j=$i+1; $j<count($dir1); $j++) {
 			if (!$dir1[$i]['isdir'] && !$dir1[$i]['isdir']) {
 				if (strpos($dir1[$j]['name'], $dir1[$i]['name'])===0) {
 					$dir1[$i]['norename'] = 1;
+					break;
+				} else {
+					break;
 				}
 			}
 		}
 	}
-	usort($dir1, "mrelocator_dircmp");
+	usort($dir1, "mrelocator_dircmp_r");
+	$sql = 	"select a.post_id, a.meta_value as meta_value_a, b.meta_value as meta_value_b, c.meta_value as meta_value_c  " . 
+			"from $wpdb->postmeta a " .
+			"left join $wpdb->postmeta b on a.post_id=b.post_id and b.meta_key='_wp_attachment_metadata' " .
+			"left join $wpdb->postmeta c on a.post_id=b.post_id and c.meta_key='_wp_attachment_backup_sizes' " .
+			"where a.meta_value in (";
+	for ($i=count($dir1)-1; $i>=0; $i--) {
+		$subdir_fn = mrelocator_get_subdir($dir) . $dir1[$i]['name'];
+		$sql .= "'".$subdir_fn."'";
+		if ($i>0) $sql .= ",";
+	}
+	$sql .= ")";
+	$dbres_all = $wpdb->get_results($sql);
+
+	$idx_subdir_fn = array(); 
+	for ($i=0; $i<count($dbres_all); $i++) {
+		$subdir_fn = $dbres_all[$i]->meta_value_a;
+		$idx_subdir_fn[$subdir_fn] = $i;
+	}
+
+	$idx_dir1 = array(); 
+	for ($i=0; $i<count($dir1); $i++) {
+		$idx_dir1[$dir1[$i]['name']] = $i;
+	}
+	
 	for ($i=count($dir1)-1; $i>=0; $i--) {
 		$dir1[$i]['id'] = "";
 		if ($dir1[$i]['isdir']) {
@@ -202,13 +234,15 @@ function mrelocator_getdir_callback()
 		}
 		if ($dir1[$i]['isthumb']==1 || $dir1[$i]['isdir']==1) {continue;}
 		$subdir_fn = mrelocator_get_subdir($dir) . $dir1[$i]['name'];
-		$dbres = $wpdb->get_results("select post_id from $wpdb->postmeta where meta_value='".$subdir_fn."'");
+		@$db_idx = $idx_subdir_fn[$subdir_fn]; //$wpdb->get_results("select post_id from $wpdb->postmeta where meta_value='".$subdir_fn."'");
 		$dir1[$i]['parent'] = "";
 		$dir1[$i]['thumbnail'] = "";
 		$dir1[$i]['thumbnail_url'] = "";
-		if (count($dbres)) {
-			$dir1[$i]['id'] = $dbres[0]->post_id;
-			$res = wp_get_attachment_metadata( $dbres[0]->post_id );
+		
+		//if (count($dbres_all[$db_idx])) {
+		if (!is_null($db_idx)) {
+			$dir1[$i]['id'] = $dbres_all[$db_idx]->post_id;
+			$res = unserialize($dbres_all[$db_idx]->meta_value_b);//wp_get_attachment_metadata( $dbres_all[$db_idx]->post_id );
 			if (!is_array($res)) {
 				//mrelocator_log(print_r($res,true));
 				//echo "An error occured. Please download log file and send to the plugin author.";
@@ -219,31 +253,27 @@ function mrelocator_getdir_callback()
 					$min_size = -1;
 					$min_child = -1;
 					foreach ($res['sizes'] as $key => $value) {
-						for ($j=0; $j<count($dir1); $j++) {
-							if ($dir1[$j]['name'] == $res['sizes'][$key]['file']) {
-								$dir1[$j]['parent'] = $i;
-								$dir1[$j]['isthumb'] = 1;
-								$size = $res['sizes'][$key]['width']*$res['sizes'][$key]['height'];
-								if ($size < $min_size || $min_size==-1) {
-									$min_size = $size;
-									$min_child = $j;
-								}
-								break;
+						$j = $idx_dir1[$res['sizes'][$key]['file']];
+						if (!is_null($j)) {
+							$dir1[$j]['parent'] = $i;
+							$dir1[$j]['isthumb'] = 1;
+							$size = $res['sizes'][$key]['width']*$res['sizes'][$key]['height'];
+							if ($size < $min_size || $min_size==-1) {
+								$min_size = $size;
+								$min_child = $j;
 							}
 						}
 					}
 					$dir1[$i]['thumbnail'] = $min_child;
 					$dir1[$i]['thumbnail_url'] = mrelocator_path2url($dir .  $dir1[$min_child]['name']);
-					$backup_sizes = get_post_meta( $dbres[0]->post_id, '_wp_attachment_backup_sizes', true );
-					$meta = wp_get_attachment_metadata( $dbres[0]->post_id );
+					$backup_sizes = unserialize($dbres_all[$db_idx]->meta_value_c); //get_post_meta( $dbres_all[$db_idx]->post_id, '_wp_attachment_backup_sizes', true );
+					//$meta = wp_get_attachment_metadata( $dbres_all[$db_idx]->post_id );
 					if ( is_array($backup_sizes) ) {
 						foreach ( $backup_sizes as $size ) {
-							for ($j=0; $j<count($dir1); $j++) {
-								if ($dir1[$j]['name'] == $size['file']) {
-									$dir1[$j]['parent'] = $i;
-									$dir1[$j]['isthumb'] = 1;
-									break;
-								}
+							$j = $idx_dir1[$size['file']];
+							if (!is_null($j)) {
+								$dir1[$j]['parent'] = $i;
+								$dir1[$j]['isthumb'] = 1;
 							}
 						}
 					}
@@ -259,9 +289,10 @@ function mrelocator_getdir_callback()
 			}
 		}
 	}
+//dbg2("mrelocator_getdir_callback end ".date("l jS \of F Y h:i:s A"));	
 	echo json_encode($dir1);
 	
-	if ($errflg) mrelocator_log(json_encode($dir1));
+	//if ($errflg) mrelocator_log(json_encode($dir1));
 
 	die();
 }
@@ -272,9 +303,15 @@ function mrelocator_dircmp($a, $b)
 {
 	$ret = $b['isdir'] - $a['isdir'];
 	if ($ret) return $ret;
-	return strcasecmp($a['name'], $b['name']);
+	return strcasecmp($b['name'], $a['name']);
 }
 
+function mrelocator_dircmp_r($a, $b)
+{
+	$ret = $b['isdir'] - $a['isdir'];
+	if ($ret) return $ret;
+	return strcasecmp($a['name'], $b['name']);
+}
 
 function mrelocator_mkdir_callback()
 {
@@ -324,14 +361,12 @@ function mrelocator_get_subdir($dir)
 
 function mrelocator_rename_callback()
 {
-//rename ('/home/ued/public_html/w/wp-content/uploads/2011','/home/ued/public_html/w/wp-content/uploads/2011aaaa');die();
-
 	global $wpdb;
 	global $mrelocator_uploaddir;
 	global $mrelocator_uploadurl;
 
 	ignore_user_abort(true);
-	set_time_limit(900);
+	set_time_limit(1800);
 	ini_set("track_errors",true);
 
 	$wpdb->show_errors();
