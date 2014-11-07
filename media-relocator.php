@@ -3,7 +3,7 @@
 Plugin Name: Media File Manager
 Plugin URI: http://tempspace.net/plugins/?page_id=111
 Description: You can make sub-directories in the upload directory, and move files into them. At the same time, this plugin modifies the URLs/path names in the database. Also an alternative file-selector is added in the editing post/page screen, so you can pick up media files from the subfolders easily.
-Version: 1.3.1pre
+Version: 1.3.1pre2
 Author: Atsushi Ueda
 Author URI: http://tempspace.net/plugins/
 License: GPL2
@@ -157,9 +157,10 @@ function mrelocator_getdir_callback()
 	global $mrelocator_plugin_URL;
 	global $mrelocator_uploaddir;
 
+	$local_post_dir = stripslashes($_POST['dir']);
 	$errflg = false;
 
-	$dir = mrl_adjpath($mrelocator_uploaddir . "/" . $_POST['dir'], true);
+	$dir = mrl_adjpath($mrelocator_uploaddir . "/" . $local_post_dir, true);
 	$dir0=array();
 	mrelocator_getdir($dir, $dir0);
 	if (!count($dir0)) die("[]");
@@ -317,11 +318,15 @@ function mrelocator_mkdir_callback()
 {
 	global $wpdb;
 	global $mrelocator_uploaddir;
+	
+	$local_post_dir = stripslashes($_POST['dir']);
+	$local_post_newdir = stripslashes($_POST['newdir']);
+	
 	ini_set("track_errors",true);
 
-	$dir = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir'], true);
-	$newdir = $_POST['newdir'];
-
+	$dir = mrl_adjpath($mrelocator_uploaddir."/".$local_post_dir, true);
+	$newdir = $local_post_newdir;
+	
 	$res = chdir($dir);
 	if (!$res) die($php_errormsg);
 
@@ -370,12 +375,16 @@ function mrelocator_rename_callback()
 	ini_set("track_errors",true);
 
 	$wpdb->show_errors();
+	
+	$local_post_dir = stripslashes($_POST['dir']);
+	$local_post_from = stripslashes($_POST['from']);
+	$local_post_to = stripslashes($_POST['to']);
 
-	$dir = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir'], true);
+	$dir = mrl_adjpath($mrelocator_uploaddir."/".$local_post_dir, true);
 	$subdir = substr($dir, strlen($mrelocator_uploaddir));
 
-	$old[0] = $_POST['from'];
-	$new[0] = $_POST['to'];
+	$old[0] = $local_post_from;
+	$new[0] = $local_post_to;
 	if ($old[0] == $new[0]) die("Success");
 
 	$old_url =  mrelocator_path2url($dir . $old[0]);
@@ -424,8 +433,8 @@ function mrelocator_rename_callback()
 				$oldp .= "/";
 				$newp .= "/";
 			}
-			$oldu = $mrelocator_uploadurl . ltrim($_POST['dir'],"/") . $old[$i].(is_dir($newp)?"/":"");	//old url
-			$newu = $mrelocator_uploadurl . ltrim($_POST['dir'],"/") . $new[$i].(is_dir($newp)?"/":"");	//new url
+			$oldu = $mrelocator_uploadurl . ltrim($local_post_dir,"/") . $old[$i].(is_dir($newp)?"/":"");	//old url
+			$newu = $mrelocator_uploadurl . ltrim($local_post_dir,"/") . $new[$i].(is_dir($newp)?"/":"");	//new url
 			$olda = $subdir.$old[$i];	//old attachment file name (subdir+basename)
 			$newa = $subdir.$new[$i];	//new attachment file name (subdir+basename)
 
@@ -486,14 +495,21 @@ $wpdb->show_errors();
 	set_time_limit(900);
 	ini_set("track_errors",true);
 
+
 	global $mrelocator_uploaddir;
 	global $mrelocator_uploadurl;
-	$dir_from = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir_from'], true);
-	$dir_to = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir_to'], true);
+	
+	$local_post_dir_from = stripslashes($_POST['dir_from']);
+	$local_post_dir_to = stripslashes($_POST['dir_to']);
+	$local_post_items = stripslashes($_POST['items']);
+
+	
+	$dir_from = mrl_adjpath($mrelocator_uploaddir."/".$local_post_dir_from, true);
+	$dir_to = mrl_adjpath($mrelocator_uploaddir."/".$local_post_dir_to, true);
 	$dir_to_list = array();
 	mrelocator_getdir($dir_to, $dir_to_list);
 	
-	$items0 = $_POST['items'];
+	$items0 = $local_post_items;
 	$items = explode("/",$items0);
 	
 	$same = "";
@@ -538,8 +554,8 @@ $wpdb->show_errors();
 				$new .= "/";
 				$isdir=true;
 			}
-			$oldu = mrl_adjpath( $mrelocator_uploadurl."/".$_POST['dir_from']."/".$items[$i] );	//old url
-			$newu = mrl_adjpath( $mrelocator_uploadurl."/".$_POST['dir_to']."/".$items[$i] );	//new url
+			$oldu = mrl_adjpath( $mrelocator_uploadurl."/".$local_post_dir_from."/".$items[$i] );	//old url
+			$newu = mrl_adjpath( $mrelocator_uploadurl."/".$local_post_dir_to."/".$items[$i] );	//new url
 
 			if ($wpdb->query("update $wpdb->posts set post_content=replace(post_content, '" . $oldu . "','" . $newu . "') where post_content like '%".$oldu."%'")===FALSE) {throw new Exception('1');}
 			if ($wpdb->query("update $wpdb->postmeta set meta_value=replace(meta_value, '" . $oldu . "','" . $newu . "') where meta_value like '%".$oldu."%'")===FALSE) {throw new Exception('2');}
@@ -587,7 +603,16 @@ add_action('wp_ajax_mrelocator_move', 'mrelocator_move_callback');
 function mrelocator_delete_empty_dir_callback()
 {
 	global $mrelocator_uploaddir;
-	$dir = mrl_adjpath($mrelocator_uploaddir."/".$_POST['dir']."/".$_POST['name'], true);
+	
+	$local_post_dir = stripslashes($_POST['dir']);
+	$local_post_name = stripslashes($_POST['name']);
+
+	$dir = mrl_adjpath($mrelocator_uploaddir."/".$local_post_dir."/".$local_post_name, true);
+	
+	if (strstr($local_post_name,"\\")) {
+		$dir = substr($dir,0,strlen($dir)-strlen($local_post_name)-1).$local_post_name."/";
+	}
+	
 	if (!@rmdir($dir)) {
 		$error = error_get_last();
 		die($error['message']);

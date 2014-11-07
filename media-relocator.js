@@ -595,7 +595,7 @@ MrlInputTextClass.prototype.make = function(title, init_text, textbox_width, is_
 			return;
 		}
 		if (that.check_invalid_chr(result)) {
-			alert("The name is not valid.");
+			alert("You cannot use the following characters and whitespace:  " + that.invalid_chr_msg());
 			return;
 		}
 		jQuery('body').unbind('click.mrlinput');
@@ -638,20 +638,31 @@ MrlInputTextClass.prototype.check_dotext = function(str, isdir)
 	return false;
 }
 
+
+var invalid_chr = ["\\", "/", ":", "*", "?", "+", "\"", "<", ">", "|", "%", "&", "'", " ", "!", "#", "$", "(", ")", "{", "}"];
+
 // function name: MrlInputTextClass::invalid_chr
 // description : check if invalid character exists in the name.
 // argument : (str: target string)
 // return : true(exists), false(not exists)
 MrlInputTextClass.prototype.check_invalid_chr = function(str)
 {
-	var chr = ["\\", "/", ":", "*", "?", "\"", "<", ">", "|", "%", "&"];
 	var i;
-	for (i=0; i<chr.length; i++) {
-		if (str.indexOf(chr[i]) >= 0) {
+	for (i=0; i<invalid_chr.length; i++) {
+		if (str.indexOf(invalid_chr[i]) >= 0) {
 			return true;
 		}
 	}
 	return false;
+}
+
+MrlInputTextClass.prototype.invalid_chr_msg = function()
+{
+	var msg = "";
+	for (i=0; i<invalid_chr.length; i++) {
+		msg += invalid_chr[i] + " ";
+	}
+	return msg;
 }
 
 
